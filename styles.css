@@ -1039,3 +1039,80 @@ img, svg, video { max-width: 100%; height: auto; }
 .navbar .marque-flamme { width: 28px; height: 34px; }
 .hero-nav .marque-texte { font-size: 26px; }
 .navbar .marque-texte { font-size: 22px; }
+
+/* ============================================================
+   LOGO — zone réservée à ratio fixe (votre image y sera contenue)
+   ============================================================ */
+
+.marque {
+  display: inline-flex; align-items: center; gap: 10px;
+  text-decoration: none; line-height: 1; color: inherit;
+  cursor: pointer;
+}
+.marque:hover { text-decoration: none; }
+
+/* Conteneur dont les dimensions sont VERROUILLÉES pour qu'aucune
+   image fournie ne puisse déformer la mise en page autour. */
+.logo-zone {
+  display: inline-block;
+  position: relative;
+  flex-shrink: 0;
+  background: transparent;
+}
+
+.logo-zone-navbar {
+  width: 36px; height: 42px;
+}
+.logo-zone-auth {
+  width: 140px; height: 180px;
+  display: block; margin: 0 auto 6px;
+}
+
+/* L'image y est insérée en mode 'contain' : jamais déformée,
+   toujours proportionnelle. Quand le fichier n'existe pas (404),
+   le onerror du HTML masque l'image et révèle le placeholder. */
+.logo-img {
+  display: block;
+  width: 100%; height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+
+/* Placeholder neutre affiché tant que le fichier image n'est pas en place.
+   Cadre discret, couleurs de marque, jamais déformé. */
+.logo-placeholder {
+  display: none;
+  position: absolute; inset: 0;
+  align-items: center; justify-content: center;
+  background: var(--vert-clair);
+  border: 1.5px dashed var(--vert);
+  border-radius: 8px;
+  color: var(--vert);
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-weight: 700; font-size: 22px;
+  user-select: none;
+}
+.logo-placeholder-grand {
+  flex-direction: column;
+  gap: 6px;
+  background: var(--surface);
+  border-color: var(--vert);
+  border-width: 2px;
+}
+.logo-placeholder-grand .logo-placeholder-letter {
+  font-size: 72px; line-height: 1; color: var(--vert);
+}
+.logo-placeholder-grand .logo-placeholder-nom {
+  font-size: 16px; color: var(--texte-doux); font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.05em; text-transform: uppercase;
+}
+
+/* Le texte « LaSourc<e> » à côté de la flamme dans la navbar */
+.marque-texte {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-size: 22px; font-weight: 400;
+  color: var(--vert); letter-spacing: -0.5px;
+  line-height: 1;
+}
+.marque-texte .lettre-rouge { color: var(--rouge); }

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>LaSource — Plateforme de mentorat</title>
   <meta name="description" content="LaSource met en relation étudiants et mentors expérimentés. Posez vos questions, partagez votre expertise." />
+  <link rel="icon" type="image/png" href="assets/lasource-flamme.png" />
   <link rel="icon" type="image/svg+xml" href="assets/lasource-flamme.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -24,8 +25,12 @@
 <section class="vue active" id="vue-accueil">
   <div class="hero">
     <nav class="hero-nav">
-      <a class="marque marque-img" href="#" aria-label="LaSource — Accueil">
-        <img src="assets/lasource-flamme.svg" alt="" class="marque-flamme">
+      <a class="marque" href="#" aria-label="LaSource — Accueil">
+        <span class="logo-zone logo-zone-navbar">
+          <img src="assets/lasource-flamme.png" alt="" class="logo-img"
+               onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <span class="logo-placeholder" aria-hidden="true">L</span>
+        </span>
         <span class="marque-texte">LaSourc<span class="lettre-rouge">e</span></span>
       </a>
       <div class="actions">
@@ -75,7 +80,14 @@
   <div class="page-auth">
     <div class="boite-auth">
       <div class="logo-auth">
-        <img src="assets/lasource-logo.svg" alt="LaSource" class="marque-auth-img">
+        <span class="logo-zone logo-zone-auth">
+          <img src="assets/lasource-logo.png" alt="LaSource" class="logo-img"
+               onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <span class="logo-placeholder logo-placeholder-grand" aria-hidden="true">
+            <span class="logo-placeholder-letter">L</span>
+            <span class="logo-placeholder-nom">LaSource</span>
+          </span>
+        </span>
       </div>
       <h1>Bienvenue</h1>
       <p class="sous-titre">Connectez-vous pour accéder à votre espace</p>
@@ -115,7 +127,14 @@
   <div class="page-auth">
     <div class="boite-auth">
       <div class="logo-auth">
-        <img src="assets/lasource-logo.svg" alt="LaSource" class="marque-auth-img">
+        <span class="logo-zone logo-zone-auth">
+          <img src="assets/lasource-logo.png" alt="LaSource" class="logo-img"
+               onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <span class="logo-placeholder logo-placeholder-grand" aria-hidden="true">
+            <span class="logo-placeholder-letter">L</span>
+            <span class="logo-placeholder-nom">LaSource</span>
+          </span>
+        </span>
       </div>
       <h1>Créer un compte</h1>
       <p class="sous-titre">Choisissez votre profil pour commencer</p>
@@ -165,7 +184,14 @@
   <div class="page-auth">
     <div class="boite-auth">
       <div class="logo-auth">
-        <img src="assets/lasource-logo.svg" alt="LaSource" class="marque-auth-img">
+        <span class="logo-zone logo-zone-auth">
+          <img src="assets/lasource-logo.png" alt="LaSource" class="logo-img"
+               onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <span class="logo-placeholder logo-placeholder-grand" aria-hidden="true">
+            <span class="logo-placeholder-letter">L</span>
+            <span class="logo-placeholder-nom">LaSource</span>
+          </span>
+        </span>
       </div>
       <h1>Mot de passe oublié</h1>
       <p class="sous-titre">Saisissez votre e-mail, nous vous enverrons un lien de réinitialisation.</p>
@@ -258,8 +284,12 @@
      ============================================================ -->
 <section class="vue" id="vue-app">
   <nav class="navbar">
-    <a class="marque marque-img" href="#" onclick="naviguerApp('fil'); return false;" aria-label="LaSource — Accueil">
-      <img src="assets/lasource-flamme.svg" alt="" class="marque-flamme">
+    <a class="marque" href="#" onclick="naviguerApp('fil'); return false;" aria-label="LaSource — Accueil">
+      <span class="logo-zone logo-zone-navbar">
+        <img src="assets/lasource-flamme.png" alt="" class="logo-img"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <span class="logo-placeholder" aria-hidden="true">L</span>
+      </span>
       <span class="marque-texte">LaSourc<span class="lettre-rouge">e</span></span>
     </a>
     <div class="nav-recherche">
@@ -452,6 +482,7 @@
   </div>
 </div>
 
+<script src="api.js"></script>
 <script src="script.js"></script>
 </body>
 </html>

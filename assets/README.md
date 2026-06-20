@@ -1,15 +1,31 @@
-# Identité visuelle LaSource
+# Logo LaSource — déposer ici votre fichier officiel
 
-Ce dossier contient les ressources graphiques de la marque.
+Cette plateforme **réserve la place** pour votre logo sans plus
+tenter de le reproduire (la précédente recréation SVG s'affichait
+déformée).
 
-## Fichiers
+## Comment installer votre logo
 
-| Fichier | Usage |
-|---|---|
-| `lasource-logo.svg` | Logo complet (flamme + nom). Pour les pages d'authentification, le pied de page, les supports imprimés. |
-| `lasource-flamme.svg` | Flamme seule, sans le nom. Pour les en-têtes compacts, le favicon, l'application connectée. |
+1. Récupérez votre fichier de logo (PNG ou SVG de bonne qualité).
+2. Renommez-le **exactement** `lasource-logo.png` ou `lasource-logo.svg`.
+3. Déposez-le dans ce dossier `assets/` (remplace le placeholder).
+4. Si vous disposez d'une version « flamme seule » (sans le nom),
+   nommez-la `lasource-flamme.png` ou `lasource-flamme.svg` — elle
+   sera utilisée pour le favicon et la navbar compacte.
+5. Rechargez la page. Aucune autre modification n'est nécessaire.
 
-## Couleurs officielles
+## Pourquoi votre logo s'affichera correctement
+
+- Le HTML réserve un **conteneur à ratio fixe** :
+  - 140 × 40 px pour la navbar
+  - 200 × 260 px pour les pages d'authentification
+- L'image est insérée avec `object-fit: contain` :
+  votre logo sera **mis à l'échelle proportionnellement**,
+  jamais déformé.
+- Si le fichier est absent, le placeholder neutre s'affiche
+  automatiquement et la page reste lisible.
+
+## Couleurs officielles à respecter dans votre logo
 
 | Rôle | Couleur | Code |
 |---|---|---|
@@ -18,14 +34,12 @@ Ce dossier contient les ressources graphiques de la marque.
 | Noir | Noir flamme | `#1A1A1A` |
 | Fond | Crème clair | `#F5F4F0` |
 
-Ces tokens sont définis comme variables CSS dans `styles.css` :
-`--vert`, `--rouge`, `--noir`, `--fond`.
+Ces couleurs sont alignées avec celles de la plateforme
+(`styles.css`, variables `--vert`, `--rouge`, `--noir`, `--fond`).
 
-## Remplacer la version SVG par votre PNG original
+## Formats recommandés
 
-Si vous disposez du logo en PNG haute définition, déposez-le ici sous
-les noms `lasource-logo.png` et/ou `lasource-flamme.png`, puis dans
-`index.html` remplacez les références `.svg` par `.png` dans les
-balises `<img>` correspondantes.
-
-Aucune autre modification n'est nécessaire.
+- **Logo complet** (flamme + nom) : 200 × 260 px minimum, fond
+  transparent. SVG préférable (vectoriel, parfait à toute taille).
+- **Flamme seule** : 64 × 64 px minimum, fond transparent.
+  Idéal en SVG.

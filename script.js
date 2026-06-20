@@ -195,18 +195,129 @@ function choisirRole(elem, role) {
   elem.classList.add('actif');
   etat.roleChoisi = role;
 }
-function seConnecter() { toast('Connexion réussie. Bienvenue !'); afficherVue('vue-app'); initApp(); }
+/* Connexion : appelle réellement le backend si disponible, sinon mode démo. */
+async function seConnecter() {
+  if (!MODE.api) {
+    toast('Mode démo (backend indisponible). Bienvenue !');
+    afficherVue('vue-app'); initApp(); return;
+  }
+  const email = (document.getElementById('email-conn')?.value || '').trim().toLowerCase();
+  const mdp = document.getElementById('mdp-conn')?.value || '';
+  if (!email || !mdp) {
+    return toast('Saisissez votre e-mail et votre mot de passe.', 'erreur');
+  }
+  try {
+    await API.post('/auth/connexion', { email, mot_de_passe: mdp });
+    MODE.utilisateur = await API.get('/profil/moi');
+    appliquerUtilisateur(MODE.utilisateur);
+    toast('Connexion réussie. Bienvenue !');
+    afficherVue('vue-app'); initApp();
+  } catch (err) {
+    toast(err.message || 'Identifiants incorrects.', 'erreur');
+  }
+}
+
+/* Synchronise l'état UI avec l'utilisateur retourné par /api/profil/moi. */
+function appliquerUtilisateur(u) {
+  if (!u) return;
+  const initiales = ((u.prenom || '?')[0] + (u.nom || '?')[0]).toUpperCase();
+  etat.utilisateur = {
+    id: u.id_utilisateur,
+    prenom: u.prenom || '',
+    nom: u.nom || '',
+    initiales,
+    role: u.role || 'etudiant',
+    pays: u.pays || '',
+    etudes: u.etudes || '',
+    bio: u.bio || '',
+    secteurs: (u.secteurs || []).map(s => s.libelle),
+    estAdmin: !!u.est_admin,
+    questionsPosees: 0,
+    mentorsSuivis: 0,
+    photo: u.photo_url || null,
+    verifie: !!u.est_verifie,
+  };
+}
 function commencerOnboarding() { etat.etapeOnboarding = 1; majEtapeOnboarding(); afficherVue('vue-onboarding'); }
-function naviguerEtape(delta) {
+async function naviguerEtape(delta) {
   const nouv = etat.etapeOnboarding + delta;
   if (nouv < 1) return;
   if (nouv > 4) {
-    etat.utilisateur.role = etat.roleChoisi;   // applique le rôle choisi à l'inscription
-    toast('Inscription terminée. Bienvenue sur LaSource !');
+    // Dernière étape : créer réellement le compte si backend dispo
+    if (MODE.api) {
+      const ok = await finaliserInscriptionReelle();
+      if (!ok) return;   // on reste sur l'étape pour permettre la correction
+    } else {
+      etat.utilisateur.role = etat.roleChoisi;
+      toast('Mode démo : inscription simulée. Bienvenue !');
+    }
     afficherVue('vue-app'); initApp(); return;
   }
   etat.etapeOnboarding = nouv;
   majEtapeOnboarding();
+}
+
+/* Appelle réellement /api/auth/inscription avec les données saisies
+   à l'inscription, puis met à jour le profil avec les secteurs et la
+   photo choisis pendant l'onboarding. */
+async function finaliserInscriptionReelle() {
+  const prenom = (document.getElementById('prenom-ins')?.value || '').trim();
+  const nom = (document.getElementById('nom-ins')?.value || '').trim();
+  const email = (document.getElementById('email-ins')?.value || '').trim().toLowerCase();
+  const mdp = document.getElementById('mdp-ins')?.value || '';
+  const mdp2 = document.getElementById('mdp2-ins')?.value || '';
+
+  if (!prenom || !nom) {
+    toast('Prénom et nom obligatoires.', 'erreur');
+    afficherVue('vue-inscription'); return false;
+  }
+  if (!email.includes('@')) {
+    toast('Adresse e-mail invalide.', 'erreur');
+    afficherVue('vue-inscription'); return false;
+  }
+  if (mdp.length < 8) {
+    toast('Mot de passe : 8 caractères minimum, mélange lettres+chiffres.', 'erreur');
+    afficherVue('vue-inscription'); return false;
+  }
+  if (mdp !== mdp2) {
+    toast('Les deux mots de passe ne correspondent pas.', 'erreur');
+    afficherVue('vue-inscription'); return false;
+  }
+
+  try {
+    await API.post('/auth/inscription', {
+      prenom, nom, email,
+      mot_de_passe: mdp,
+      role: etat.roleChoisi || 'etudiant',
+    });
+  } catch (err) {
+    toast(err.message || 'Inscription impossible.', 'erreur');
+    afficherVue('vue-inscription'); return false;
+  }
+
+  // Charger le profil créé pour récupérer l'id
+  try { MODE.utilisateur = await API.get('/profil/moi'); }
+  catch { MODE.utilisateur = null; }
+
+  // Étape 2 d'onboarding : secteurs sélectionnés (chips actifs)
+  const secteursChoisis = [...document.querySelectorAll('#etape-2 .chip-select.actif')]
+    .map(c => c.textContent.trim());
+
+  // Étape 1 d'onboarding : pays + études + présentation
+  const pays = document.querySelector('#etape-1 select')?.value || null;
+  const etudes = document.querySelector('#etape-1 input')?.value?.trim() || null;
+  const bio = document.querySelector('#etape-1 textarea')?.value?.trim() || null;
+
+  try {
+    if (pays || etudes || bio || secteursChoisis.length) {
+      // Met à jour ce qui est mappable côté serveur (pas tout est branché)
+      await API.put('/profil/moi', { bio, etudes }).catch(() => {});
+    }
+  } catch (_) { /* tolère un échec sur les champs optionnels */ }
+
+  if (MODE.utilisateur) appliquerUtilisateur(MODE.utilisateur);
+  toast('Inscription terminée. Bienvenue sur LaSource !');
+  return true;
 }
 function majEtapeOnboarding() {
   const e = etat.etapeOnboarding;
@@ -235,8 +346,12 @@ function majEtapeOnboarding() {
   }
 }
 function toggleChip(elem) { elem.classList.toggle('actif'); }
-function seDeconnecter() {
+async function seDeconnecter() {
   document.getElementById('menuProfil').classList.remove('ouvert');
+  if (MODE.api) {
+    try { await API.post('/auth/deconnexion', {}); } catch (_) { /* on déconnecte quand même côté UI */ }
+  }
+  MODE.utilisateur = null;
   toast('Vous avez été déconnecté(e).');
   afficherVue('vue-accueil');
 }
@@ -282,17 +397,29 @@ function iconePouce() {
 /* ============================================================
    INITIALISATION
    ============================================================ */
-function initApp() {
+async function initApp() {
+  // En mode API : recharge l'utilisateur courant
+  if (MODE.api) {
+    try { MODE.utilisateur = await API.get('/profil/moi'); appliquerUtilisateur(MODE.utilisateur); }
+    catch (_) { /* on garde l'état local */ }
+  }
+
   document.getElementById('avatar-nav').innerHTML = etat.utilisateur.photo
     ? `<img src="${etat.utilisateur.photo}" class="photo-avatar" alt="">` : etat.utilisateur.initiales;
   document.getElementById('avatar-fil').innerHTML = document.getElementById('avatar-nav').innerHTML;
   document.getElementById('lien-admin').style.display = etat.utilisateur.estAdmin ? 'flex' : 'none';
   document.getElementById('lien-mentor').style.display = (etat.utilisateur.role === 'mentor') ? 'flex' : 'none';
   rendreSidebarProfil();
-  rendreFil();
+  rendreFil();              // affichage immédiat (démo ou cache)
   rendreColonneDroite();
   rendreNotifications();
   majNavActif();
+
+  // Recharge asynchrone depuis l'API si dispo
+  if (MODE.api) {
+    chargerFilDepuisApi();
+    chargerNotificationsDepuisApi();
+  }
 }
 
 /* ============================================================
@@ -328,6 +455,49 @@ function changerTri(elem, tri) {
   elem.classList.add('actif');
   etat.tri = tri;
   rendreFil();
+}
+
+/* Recharge la variable `questions` depuis le backend et re-rend le fil.
+   Si le backend est inaccessible, conserve les données de démo. */
+async function chargerFilDepuisApi() {
+  if (!MODE.api) return;
+  try {
+    const params = new URLSearchParams();
+    if (etat.tri) params.set('tri', etat.tri);
+    const liste = await API.get('/questions?' + params.toString());
+    // Adapter la forme API au format attendu par carteQuestionHTML
+    const adaptees = liste.map(q => ({
+      id: q.id_question,
+      titre: q.titre,
+      corps: q.corps,
+      secteur: q.secteur || 'Autre',
+      auteur: `${q.prenom || ''} ${q.nom || ''}`.trim() || 'Anonyme',
+      initiales: ((q.prenom || '?')[0] + (q.nom || '?')[0]).toUpperCase(),
+      pays: q.pays || '',
+      temps: _tempsRelatif(q.publiee_le),
+      utile: q.nb_utiles || 0,
+      repCount: q.nb_reponses || 0,
+      reponses: [],
+    }));
+    // Remplace le contenu de l'array (les références sont conservées)
+    questions.length = 0;
+    questions.push(...adaptees);
+    rendreFil(); rendreColonneDroite();
+  } catch (err) {
+    // Reste sur les données de démo en cas d'échec
+    console.warn('Fil API indisponible :', err.message);
+  }
+}
+
+function _tempsRelatif(dateIso) {
+  if (!dateIso) return '';
+  const d = new Date(dateIso);
+  const sec = Math.floor((Date.now() - d.getTime()) / 1000);
+  if (sec < 60) return "à l'instant";
+  if (sec < 3600) return `il y a ${Math.floor(sec/60)} min`;
+  if (sec < 86400) return `il y a ${Math.floor(sec/3600)} h`;
+  if (sec < 86400 * 7) return `il y a ${Math.floor(sec/86400)} j`;
+  return d.toLocaleDateString('fr-FR');
 }
 
 function rendreFil() {
@@ -377,22 +547,57 @@ function carteQuestionHTML(q) {
 }
 
 /* ----- Bouton "utile" : 1 clic = j'aime, 2e clic = annulé ----- */
-function basculerUtileQ(id) {
+async function basculerUtileQ(id) {
   const q = questions.find(x => x.id === id); if (!q) return;
-  if (etat.utilesQ.has(id)) {
-    etat.utilesQ.delete(id); q.utile = Math.max(0, q.utile - 1);
-    toast('Marque retirée.');
-  } else {
-    etat.utilesQ.add(id); q.utile++;
-    toast('Marqué comme utile.');
-  }
+  // Optimistic UI : on bascule immédiatement, puis on confirme côté serveur
+  const etaitMarque = etat.utilesQ.has(id);
+  if (etaitMarque) { etat.utilesQ.delete(id); q.utile = Math.max(0, q.utile - 1); }
+  else             { etat.utilesQ.add(id);    q.utile++; }
   rendreCourant();
+
+  if (MODE.api) {
+    try {
+      const r = await API.post(`/questions/${id}/utile`, {});
+      // Synchronise le compteur avec la valeur officielle du serveur
+      if (typeof r?.nb_utiles === 'number') {
+        q.utile = r.nb_utiles;
+        if (r.marque) etat.utilesQ.add(id); else etat.utilesQ.delete(id);
+        rendreCourant();
+      }
+      toast(r?.marque ? 'Marqué comme utile.' : 'Marque retirée.');
+    } catch (err) {
+      // Rollback en cas d'échec serveur
+      if (etaitMarque) { etat.utilesQ.add(id); q.utile++; }
+      else             { etat.utilesQ.delete(id); q.utile = Math.max(0, q.utile - 1); }
+      rendreCourant();
+      toast(err.message || 'Action impossible.', 'erreur');
+    }
+  } else {
+    toast(etat.utilesQ.has(id) ? 'Marqué comme utile.' : 'Marque retirée.');
+  }
 }
 
-function basculerSauver(id) {
-  if (etat.sauvegardees.has(id)) { etat.sauvegardees.delete(id); toast('Retirée de vos sauvegardes.'); }
-  else { etat.sauvegardees.add(id); toast('Question sauvegardée.'); }
+async function basculerSauver(id) {
+  const etait = etat.sauvegardees.has(id);
+  if (etait) etat.sauvegardees.delete(id); else etat.sauvegardees.add(id);
   rendreCourant();
+
+  if (MODE.api) {
+    try {
+      const r = await API.post(`/questions/${id}/sauvegarder`, {});
+      if (typeof r?.sauvegardee === 'boolean') {
+        if (r.sauvegardee) etat.sauvegardees.add(id); else etat.sauvegardees.delete(id);
+        rendreCourant();
+      }
+      toast(r?.sauvegardee ? 'Question sauvegardée.' : 'Retirée de vos sauvegardes.');
+    } catch (err) {
+      if (etait) etat.sauvegardees.add(id); else etat.sauvegardees.delete(id);
+      rendreCourant();
+      toast(err.message || 'Action impossible.', 'erreur');
+    }
+  } else {
+    toast(etat.sauvegardees.has(id) ? 'Question sauvegardée.' : 'Retirée de vos sauvegardes.');
+  }
 }
 
 function rendreCourant() {
@@ -469,32 +674,76 @@ function reponseHTML(r) {
     </div>`;
 }
 
-function utileR(btn) {
+async function utileR(btn, idReponse) {
   const actif = btn.classList.toggle('actif');
   const cnt = btn.querySelector('.cnt');
   const n = parseInt(cnt.textContent, 10) || 0;
   cnt.textContent = actif ? n + 1 : Math.max(0, n - 1);
-  toast(actif ? 'Réponse marquée comme utile.' : 'Marque retirée.');
+
+  if (MODE.api && idReponse) {
+    try {
+      await API.post(`/reponses/${idReponse}/utile`, {});
+      toast(actif ? 'Réponse marquée comme utile.' : 'Marque retirée.');
+    } catch (err) {
+      btn.classList.toggle('actif');
+      cnt.textContent = n;
+      toast(err.message || 'Action impossible.', 'erreur');
+    }
+  } else {
+    toast(actif ? 'Réponse marquée comme utile.' : 'Marque retirée.');
+  }
 }
 function noter(elem, n) {
   const conteneur = elem.parentElement;
   [...conteneur.children].forEach((c, i) => c.classList.toggle('vide', i >= n));
   toast(`Note attribuée : ${n}/5.`);
 }
-function signaler(id) { toast('Question signalée à la modération.'); }
+async function signaler(id) {
+  const motif = window.prompt('Motif du signalement (optionnel) :', '') || '';
+  if (motif === null) return;  // annulé
+  if (MODE.api) {
+    try {
+      await API.post(`/questions/${id}/signaler`, { motif });
+      toast('Question signalée à la modération.');
+    } catch (err) {
+      toast(err.message || 'Signalement impossible.', 'erreur');
+    }
+  } else {
+    toast('Question signalée à la modération (mode démo).');
+  }
+}
 
-function ajouterReponse(id) {
+async function ajouterReponse(id) {
   if (!estMentor()) return toast('Seuls les mentors peuvent répondre.', 'erreur');
   const inp = document.getElementById('rep-input-'+id);
-  if (!inp.value.trim()) return toast('Écrivez votre réponse.', 'erreur');
+  const contenu = (inp?.value || '').trim();
+  if (!contenu) return toast('Écrivez votre réponse.', 'erreur');
+
+  if (MODE.api) {
+    try {
+      await API.post('/reponses', { id_question: id, contenu });
+      toast('Réponse publiée.');
+      inp.value = '';
+      await chargerFilDepuisApi();
+      ouvrirQuestion(id);
+      return;
+    } catch (err) {
+      return toast(err.message || 'Publication impossible.', 'erreur');
+    }
+  }
+
+  // Mode démo
   const q = questions.find(x => x.id === id);
   const u = etat.utilisateur;
-  q.reponses.push({ auteur: u.prenom + ' ' + u.nom, init: u.initiales, mentor: true, verifie: false, contenu: inp.value, utile: 0 });
+  q.reponses.push({
+    auteur: u.prenom + ' ' + u.nom, init: u.initiales,
+    mentor: true, verifie: false, contenu, utile: 0,
+  });
   q.repCount++;
-  // Notifier les abonnés de ce mentor (= utilisateurs qui suivent — ici on simule en notifiant l'utilisateur courant si la question est suivie)
   notifierAbonnesMentor(u.prenom + ' ' + u.nom, q.id, q.titre);
-  toast('Réponse publiée.');
-  inp.value = ''; ouvrirQuestion(id);
+  toast('Réponse publiée (mode démo).');
+  inp.value = '';
+  ouvrirQuestion(id);
 }
 
 /* ============================================================
@@ -516,16 +765,32 @@ function rendreColonneDroite() {
     }).join('');
 }
 
-function basculerSuivre(mentorId) {
+async function basculerSuivre(mentorId) {
   const m = mentors.find(x => x.id === mentorId); if (!m) return;
-  if (etat.suivis.has(mentorId)) {
-    etat.suivis.delete(mentorId);
-    toast(`Vous ne suivez plus ${m.prenom}.`);
-  } else {
-    etat.suivis.add(mentorId);
-    toast(`Vous suivez désormais ${m.prenom}. Vous serez notifié(e) de ses réponses.`);
-  }
+  const etait = etat.suivis.has(mentorId);
+  if (etait) etat.suivis.delete(mentorId); else etat.suivis.add(mentorId);
   rendreColonneDroite();
+
+  if (MODE.api) {
+    try {
+      const r = await API.post(`/mentors/${mentorId}/suivre`, {});
+      if (typeof r?.suivi === 'boolean') {
+        if (r.suivi) etat.suivis.add(mentorId); else etat.suivis.delete(mentorId);
+        rendreColonneDroite();
+      }
+      toast(r?.suivi
+        ? `Vous suivez désormais ${m.prenom}. Vous serez notifié(e) de ses réponses.`
+        : `Vous ne suivez plus ${m.prenom}.`);
+    } catch (err) {
+      if (etait) etat.suivis.add(mentorId); else etat.suivis.delete(mentorId);
+      rendreColonneDroite();
+      toast(err.message || 'Action impossible.', 'erreur');
+    }
+  } else {
+    toast(etat.suivis.has(mentorId)
+      ? `Vous suivez désormais ${m.prenom}. Vous serez notifié(e) de ses réponses.`
+      : `Vous ne suivez plus ${m.prenom}.`);
+  }
 }
 
 /* Quand un mentor répond, notifier tous ses abonnés */
@@ -588,22 +853,54 @@ function majSimilaires() {
   bloc.style.display = 'block';
 }
 
-function publierQuestion() {
+async function publierQuestion() {
   const t = document.getElementById('q-titre').value.trim();
   const c = document.getElementById('q-corps').value.trim();
   if (!t || !c) return toast('Titre et description sont obligatoires.', 'erreur');
   if (!etat.categorieChoisie) return toast('Choisissez une catégorie.', 'erreur');
-  questions.unshift({ id: Date.now(), titre: t, corps: c, secteur: etat.categorieChoisie,
-    auteur: `${etat.utilisateur.prenom} ${etat.utilisateur.nom}`, initiales: etat.utilisateur.initiales,
-    pays: etat.utilisateur.pays, temps: 'à l\'instant', utile: 0, repCount: 0, reponses: [] });
+
+  // Si backend dispo : POST réel et rechargement du fil
+  if (MODE.api) {
+    try {
+      // Récupère l'id du secteur correspondant au libellé choisi
+      const ref = await API.get('/profil/referentiels').catch(() => null);
+      const secteur = ref?.secteurs?.find(s => s.libelle === etat.categorieChoisie);
+      if (!secteur) {
+        return toast('Catégorie inconnue côté serveur.', 'erreur');
+      }
+      await API.post('/questions', { titre: t, corps: c, id_secteur: secteur.id_secteur });
+      toast('Votre question a été publiée !');
+      _resetFormulaireQuestion();
+      fermerModal('modalPublier');
+      await chargerFilDepuisApi();
+      return;
+    } catch (err) {
+      return toast(err.message || 'Publication impossible.', 'erreur');
+    }
+  }
+
+  // Mode démo : ajout local
+  questions.unshift({
+    id: Date.now(), titre: t, corps: c, secteur: etat.categorieChoisie,
+    auteur: `${etat.utilisateur.prenom} ${etat.utilisateur.nom}`,
+    initiales: etat.utilisateur.initiales,
+    pays: etat.utilisateur.pays, temps: 'à l\'instant',
+    utile: 0, repCount: 0, reponses: [],
+  });
+  _resetFormulaireQuestion();
   fermerModal('modalPublier');
-  document.getElementById('q-titre').value = ''; document.getElementById('q-corps').value = '';
+  toast('Votre question a été publiée (mode démo).');
+  rendreFil(); rendreColonneDroite();
+}
+
+function _resetFormulaireQuestion() {
+  document.getElementById('q-titre').value = '';
+  document.getElementById('q-corps').value = '';
   document.querySelectorAll('#chips-cat .chip-select').forEach(c => c.classList.remove('actif'));
   document.getElementById('compteur').textContent = '0';
-  document.getElementById('bloc-similaires').style.display = 'none';
+  const bs = document.getElementById('bloc-similaires');
+  if (bs) bs.style.display = 'none';
   etat.categorieChoisie = null;
-  toast('Votre question a été publiée !');
-  rendreFil(); rendreColonneDroite();
 }
 
 /* ============================================================
@@ -814,9 +1111,29 @@ function majBadgeNotifs() {
   const b = document.getElementById('badge-notif');
   b.style.display = n ? 'flex' : 'none'; b.textContent = n;
 }
-function toutMarquerLu() {
+async function toutMarquerLu() {
   notifications.forEach(n => n.nonLu = false);
-  rendreNotifications(); toast('Toutes les notifications ont été marquées comme lues.');
+  rendreNotifications();
+  if (MODE.api) {
+    try { await API.post('/notifications/tout-lu', {}); } catch (_) { /* tolère */ }
+  }
+  toast('Toutes les notifications ont été marquées comme lues.');
+}
+
+/* Recharge les notifications depuis le backend (silencieux). */
+async function chargerNotificationsDepuisApi() {
+  if (!MODE.api) return;
+  try {
+    const liste = await API.get('/notifications');
+    notifications.length = 0;
+    liste.forEach(n => notifications.push({
+      texte: n.texte,
+      temps: _tempsRelatif(n.cree_le),
+      nonLu: !n.est_lue,
+      questionId: n.lien_question || null,
+    }));
+    rendreNotifications();
+  } catch (_) { /* on garde les démo */ }
 }
 
 /* ============================================================
@@ -1141,6 +1458,20 @@ document.addEventListener('click', (e) => {
 /* ============================================================
    DÉMARRAGE
    ============================================================ */
-window.addEventListener('DOMContentLoaded', () => {
-  // afficherVue('vue-app'); initApp(); // décommenter pour démarrer directement dans l'app
+window.addEventListener('DOMContentLoaded', async () => {
+  // Détecte si le backend est joignable ; charge la session si oui
+  await initialiserApi();
+
+  // Indicateur discret du mode actuel (utile au debug visuel)
+  const marque = document.querySelector('.hero-nav .marque') || document.querySelector('.navbar .marque');
+  if (marque && !MODE.api) {
+    marque.title = 'Mode démo — backend non détecté (données factices)';
+  }
+
+  // Si déjà connecté (cookie valide), basculer directement dans l'app
+  if (MODE.api && MODE.utilisateur) {
+    appliquerUtilisateur(MODE.utilisateur);
+    afficherVue('vue-app');
+    initApp();
+  }
 });

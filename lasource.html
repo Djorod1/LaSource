@@ -1,0 +1,1377 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LaSource — La plateforme de mentorat</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+  :root {
+    --blue-50: #EBF3FF;
+    --blue-100: #C4DAFF;
+    --blue-200: #91BAFF;
+    --blue-400: #3B82F6;
+    --blue-500: #2563EB;
+    --blue-600: #1D4ED8;
+    --blue-700: #1E40AF;
+    --blue-800: #1E3A8A;
+    --blue-900: #172554;
+    --accent: #F97316;
+    --accent-light: #FFF3E8;
+    --white: #FFFFFF;
+    --gray-50: #F8FAFC;
+    --gray-100: #F1F5F9;
+    --gray-200: #E2E8F0;
+    --gray-300: #CBD5E1;
+    --gray-400: #94A3B8;
+    --gray-500: #64748B;
+    --gray-600: #475569;
+    --gray-700: #334155;
+    --gray-800: #1E293B;
+    --gray-900: #0F172A;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 16px rgba(37,99,235,0.10);
+    --shadow-lg: 0 8px 32px rgba(37,99,235,0.14);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--gray-50);
+    color: var(--gray-800);
+    min-height: 100vh;
+  }
+
+  h1,h2,h3,h4,h5 { font-family: 'Syne', sans-serif; }
+
+  /* ===== PAGES ===== */
+  .page { display: none; min-height: 100vh; }
+  .page.active { display: block; }
+
+  /* ===== NAVBAR ===== */
+  .navbar {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--gray-200);
+    padding: 0 2rem;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 60px;
+  }
+  .navbar-logo {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px; font-weight: 800;
+    color: var(--blue-600);
+    display: flex; align-items: center; gap: 8px;
+    cursor: pointer;
+  }
+  .navbar-logo .dot { color: var(--accent); }
+  .navbar-logo .icon-logo {
+    width: 32px; height: 32px;
+    background: var(--blue-600);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .navbar-logo .icon-logo i { color: white; font-size: 16px; }
+  .nav-links { display: flex; gap: 4px; }
+  .nav-link {
+    font-size: 14px; font-weight: 400;
+    color: var(--gray-600);
+    padding: 6px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none; background: none;
+  }
+  .nav-link:hover { background: var(--blue-50); color: var(--blue-600); }
+  .nav-link.active { background: var(--blue-50); color: var(--blue-600); font-weight: 500; }
+  .nav-actions { display: flex; align-items: center; gap: 10px; }
+  .btn { border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-weight: 500; transition: all 0.2s; border-radius: var(--radius-sm); }
+  .btn-sm { font-size: 13px; padding: 7px 16px; }
+  .btn-md { font-size: 14px; padding: 9px 20px; }
+  .btn-lg { font-size: 15px; padding: 12px 28px; }
+  .btn-primary { background: var(--blue-600); color: white; }
+  .btn-primary:hover { background: var(--blue-700); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+  .btn-secondary { background: var(--blue-50); color: var(--blue-600); }
+  .btn-secondary:hover { background: var(--blue-100); }
+  .btn-outline { background: transparent; color: var(--gray-700); border: 1px solid var(--gray-200); }
+  .btn-outline:hover { border-color: var(--blue-400); color: var(--blue-600); }
+  .btn-accent { background: var(--accent); color: white; }
+  .btn-accent:hover { background: #EA6B0E; transform: translateY(-1px); }
+  .nav-icon-btn {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--gray-100); border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--gray-600); transition: all 0.2s; position: relative;
+  }
+  .nav-icon-btn:hover { background: var(--blue-50); color: var(--blue-600); }
+  .nav-icon-btn .notif-dot {
+    width: 8px; height: 8px; background: var(--accent);
+    border-radius: 50%; position: absolute; top: 6px; right: 6px;
+    border: 2px solid white;
+  }
+  .avatar-nav {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: var(--blue-600); color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    font-family: 'Syne', sans-serif;
+  }
+
+  /* ===== HOME PAGE ===== */
+  .hero {
+    background: linear-gradient(135deg, var(--blue-800) 0%, var(--blue-600) 60%, #3B82F6 100%);
+    padding: 72px 2rem 80px;
+    text-align: center;
+    position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Ccircle cx='30' cy='30' r='20'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    pointer-events: none;
+  }
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.9);
+    font-size: 12px; font-weight: 500;
+    padding: 5px 14px; border-radius: 20px;
+    margin-bottom: 20px;
+    letter-spacing: 0.05em;
+  }
+  .hero h1 {
+    font-size: clamp(32px, 5vw, 52px);
+    font-weight: 800; color: white;
+    line-height: 1.15;
+    margin-bottom: 18px;
+    max-width: 700px; margin-left: auto; margin-right: auto;
+  }
+  .hero h1 span { color: #FCD34D; }
+  .hero p {
+    font-size: 17px; color: rgba(255,255,255,0.8);
+    max-width: 520px; margin: 0 auto 32px;
+    line-height: 1.7;
+  }
+  .hero-cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .hero-stats {
+    display: flex; gap: 40px; justify-content: center;
+    margin-top: 48px; flex-wrap: wrap;
+  }
+  .hero-stat { color: white; text-align: center; }
+  .hero-stat-val { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 700; }
+  .hero-stat-lbl { font-size: 13px; color: rgba(255,255,255,0.65); margin-top: 2px; }
+
+  /* Search bar */
+  .search-section {
+    background: white;
+    padding: 28px 2rem;
+    border-bottom: 1px solid var(--gray-200);
+    position: sticky; top: 60px; z-index: 90;
+  }
+  .search-bar {
+    display: flex; align-items: center; gap: 10px;
+    max-width: 780px; margin: 0 auto;
+  }
+  .search-input-wrap {
+    flex: 1; display: flex; align-items: center; gap: 10px;
+    background: var(--gray-50); border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-md); padding: 0 14px; height: 44px;
+    transition: border-color 0.2s;
+  }
+  .search-input-wrap:focus-within { border-color: var(--blue-400); background: white; }
+  .search-input-wrap i { color: var(--gray-400); font-size: 18px; }
+  .search-input-wrap input {
+    border: none; background: transparent; font-family: 'DM Sans', sans-serif;
+    font-size: 14px; color: var(--gray-800); outline: none; flex: 1;
+  }
+  .filter-select {
+    height: 44px; padding: 0 14px;
+    border: 1.5px solid var(--gray-200); border-radius: var(--radius-md);
+    font-family: 'DM Sans', sans-serif; font-size: 13px;
+    color: var(--gray-700); background: white;
+    cursor: pointer; outline: none; transition: border-color 0.2s;
+    appearance: none; padding-right: 32px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2364748B' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center;
+    min-width: 140px;
+  }
+  .filter-select:focus { border-color: var(--blue-400); }
+
+  /* Main layout */
+  .main-layout {
+    max-width: 1100px; margin: 0 auto;
+    display: grid; grid-template-columns: 240px 1fr 260px;
+    gap: 24px; padding: 28px 2rem;
+    align-items: start;
+  }
+
+  /* Left sidebar */
+  .sidebar-left { position: sticky; top: 176px; }
+  .sidebar-card {
+    background: white; border-radius: var(--radius-lg);
+    border: 1px solid var(--gray-200); padding: 16px;
+    margin-bottom: 14px;
+  }
+  .sidebar-title {
+    font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 600;
+    color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.06em;
+    margin-bottom: 12px;
+  }
+  .cat-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: var(--radius-sm);
+    cursor: pointer; transition: all 0.15s;
+    font-size: 13px; color: var(--gray-700);
+  }
+  .cat-item:hover { background: var(--blue-50); color: var(--blue-600); }
+  .cat-item.active { background: var(--blue-50); color: var(--blue-600); font-weight: 500; }
+  .cat-item .cat-icon {
+    width: 30px; height: 30px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; font-size: 15px;
+    flex-shrink: 0;
+  }
+  .cat-count { margin-left: auto; font-size: 11px; background: var(--gray-100); color: var(--gray-500); padding: 2px 7px; border-radius: 10px; }
+  .cat-item.active .cat-count { background: var(--blue-100); color: var(--blue-700); }
+
+  /* Feed */
+  .feed-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .feed-title { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; color: var(--gray-800); }
+  .sort-tabs { display: flex; gap: 4px; }
+  .sort-tab {
+    font-size: 12px; padding: 5px 12px; border-radius: 20px;
+    border: none; background: none; cursor: pointer;
+    color: var(--gray-500); font-family: 'DM Sans', sans-serif; transition: all 0.15s;
+  }
+  .sort-tab.active { background: var(--blue-600); color: white; font-weight: 500; }
+
+  /* Post card */
+  .post-card {
+    background: white; border-radius: var(--radius-lg);
+    border: 1px solid var(--gray-200); padding: 18px 20px;
+    margin-bottom: 12px; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .post-card:hover { border-color: var(--blue-300); box-shadow: var(--shadow-md); transform: translateY(-1px); }
+  .post-card.pinned { border-color: var(--blue-200); border-left: 3px solid var(--blue-500); }
+  .post-top { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+  .avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .post-meta { flex: 1; }
+  .post-author { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 600; color: var(--gray-800); }
+  .post-info { font-size: 12px; color: var(--gray-400); margin-top: 2px; display: flex; align-items: center; gap: 6px; }
+  .post-body { font-size: 14px; color: var(--gray-700); line-height: 1.65; margin-bottom: 14px; }
+  .post-bottom { display: flex; align-items: center; gap: 16px; }
+  .post-action {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 13px; color: var(--gray-500);
+    border: none; background: none; cursor: pointer;
+    padding: 4px 8px; border-radius: 6px;
+    font-family: 'DM Sans', sans-serif; transition: all 0.15s;
+  }
+  .post-action:hover { background: var(--blue-50); color: var(--blue-600); }
+  .post-action i { font-size: 16px; }
+  .post-action.liked { color: #EF4444; }
+  .see-answer {
+    margin-left: auto; font-size: 12px; font-weight: 500;
+    color: var(--blue-600); display: flex; align-items: center; gap: 4px;
+    border: none; background: none; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; transition: all 0.15s;
+    padding: 4px 10px; border-radius: 6px;
+  }
+  .see-answer:hover { background: var(--blue-50); }
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 20px;
+  }
+  .badge-blue { background: var(--blue-50); color: var(--blue-700); }
+  .badge-orange { background: var(--accent-light); color: #C2410C; }
+  .badge-green { background: #F0FDF4; color: #166534; }
+  .badge-purple { background: #F5F3FF; color: #5B21B6; }
+  .badge-pink { background: #FDF2F8; color: #9D174D; }
+  .badge-teal { background: #F0FDFA; color: #134E4A; }
+  .pinned-label { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; color: var(--blue-600); margin-bottom: 8px; }
+
+  /* Right sidebar */
+  .sidebar-right { position: sticky; top: 176px; }
+  .mentor-mini {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px; border-radius: var(--radius-md);
+    cursor: pointer; transition: all 0.15s;
+  }
+  .mentor-mini:hover { background: var(--gray-50); }
+  .mentor-mini-info { flex: 1; min-width: 0; }
+  .mentor-mini-name { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600; color: var(--gray-800); }
+  .mentor-mini-role { font-size: 11px; color: var(--gray-500); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .follow-btn {
+    font-size: 11px; font-weight: 500; padding: 4px 10px;
+    border-radius: 20px; border: 1px solid var(--blue-300);
+    color: var(--blue-600); background: white; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; transition: all 0.15s; flex-shrink: 0;
+  }
+  .follow-btn:hover { background: var(--blue-600); color: white; border-color: var(--blue-600); }
+  .trending-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0; border-bottom: 1px solid var(--gray-100);
+  }
+  .trending-item:last-child { border-bottom: none; }
+  .trending-num { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; color: var(--gray-200); min-width: 24px; }
+  .trending-text { font-size: 13px; color: var(--gray-700); line-height: 1.4; font-weight: 500; }
+  .trending-count { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
+
+  /* ===== PROFILE PAGE ===== */
+  .profile-banner {
+    height: 180px;
+    background: linear-gradient(135deg, var(--blue-800), var(--blue-500), #60A5FA);
+    position: relative;
+  }
+  .profile-header-content {
+    max-width: 860px; margin: 0 auto; padding: 0 2rem;
+    position: relative;
+  }
+  .profile-avatar-wrap {
+    position: absolute; bottom: -50px; left: 2rem;
+  }
+  .profile-avatar {
+    width: 100px; height: 100px; border-radius: 50%;
+    border: 4px solid white; background: var(--blue-600);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 700; color: white;
+    box-shadow: var(--shadow-md);
+  }
+  .verified-badge {
+    position: absolute; bottom: 4px; right: 4px;
+    width: 26px; height: 26px; background: var(--blue-500);
+    border-radius: 50%; border: 3px solid white;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .verified-badge i { color: white; font-size: 12px; }
+  .profile-body { max-width: 860px; margin: 0 auto; padding: 0 2rem; }
+  .profile-top-bar {
+    display: flex; align-items: flex-start; justify-content: flex-end;
+    padding: 12px 0 0; min-height: 60px;
+  }
+  .profile-info { padding: 12px 0 20px; border-bottom: 1px solid var(--gray-200); }
+  .profile-name { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; color: var(--gray-900); }
+  .profile-title { font-size: 15px; color: var(--gray-600); margin-top: 4px; display: flex; align-items: center; gap: 8px; }
+  .profile-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0; }
+  .profile-bio { font-size: 14px; color: var(--gray-600); line-height: 1.7; max-width: 580px; margin-top: 10px; }
+  .profile-stats-bar {
+    display: flex; gap: 32px; padding: 20px 0;
+    border-bottom: 1px solid var(--gray-200);
+  }
+  .profile-stat { text-align: center; }
+  .profile-stat-val { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; }
+  .profile-stat-lbl { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
+  .profile-tabs { display: flex; gap: 4px; padding: 16px 0 0; margin-bottom: 20px; }
+  .profile-tab {
+    font-size: 14px; padding: 8px 16px; border-radius: 8px;
+    border: none; background: none; cursor: pointer;
+    color: var(--gray-600); font-family: 'DM Sans', sans-serif; transition: all 0.15s;
+  }
+  .profile-tab.active { background: var(--blue-600); color: white; font-weight: 500; }
+  .profile-grid { display: grid; grid-template-columns: 1fr 280px; gap: 20px; }
+  .skills-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .skill-chip {
+    font-size: 12px; padding: 5px 12px; border-radius: 20px;
+    background: var(--blue-50); color: var(--blue-700); font-weight: 500;
+    border: 1px solid var(--blue-100);
+  }
+
+  /* ===== POST DETAIL PAGE ===== */
+  .post-detail-layout { max-width: 860px; margin: 0 auto; padding: 28px 2rem; display: grid; grid-template-columns: 1fr 260px; gap: 24px; align-items: start; }
+  .post-detail-main { }
+  .post-full-card { background: white; border-radius: var(--radius-lg); border: 1px solid var(--gray-200); padding: 24px; margin-bottom: 16px; }
+  .post-full-author { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; cursor: pointer; }
+  .post-full-author-info { }
+  .post-full-name { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; color: var(--gray-800); }
+  .post-full-sub { font-size: 13px; color: var(--gray-400); }
+  .post-full-title { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; color: var(--gray-900); line-height: 1.35; margin-bottom: 14px; }
+  .post-full-body { font-size: 15px; color: var(--gray-700); line-height: 1.75; }
+  .post-full-footer { display: flex; align-items: center; gap: 12px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--gray-100); }
+  .answers-section { }
+  .answers-header { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--gray-800); display: flex; align-items: center; gap: 8px; }
+  .answers-header span { background: var(--blue-600); color: white; font-size: 12px; padding: 2px 9px; border-radius: 20px; }
+  .answer-card { background: white; border-radius: var(--radius-lg); border: 1px solid var(--gray-200); padding: 20px; margin-bottom: 12px; }
+  .answer-card.mentor-answer { border-color: var(--blue-200); border-left: 3px solid var(--blue-500); }
+  .answer-author { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .mentor-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; background: var(--blue-600); color: white; padding: 2px 8px; border-radius: 4px; margin-left: 8px; }
+  .answer-body { font-size: 14px; color: var(--gray-700); line-height: 1.75; }
+  .answer-footer { display: flex; align-items: center; gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--gray-100); }
+
+  /* Reply box */
+  .reply-box { background: white; border-radius: var(--radius-lg); border: 1px solid var(--gray-200); padding: 16px; margin-top: 16px; }
+  .reply-top { display: flex; gap: 12px; margin-bottom: 10px; }
+  .reply-textarea {
+    flex: 1; min-height: 80px; border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-md); padding: 12px;
+    font-family: 'DM Sans', sans-serif; font-size: 14px;
+    color: var(--gray-800); resize: none; outline: none;
+    transition: border-color 0.2s;
+  }
+  .reply-textarea:focus { border-color: var(--blue-400); }
+  .reply-footer { display: flex; justify-content: flex-end; gap: 8px; }
+
+  /* Sidebar right for post */
+  .post-sidebar {}
+
+  /* ===== EXPLORE PAGE ===== */
+  .explore-hero {
+    background: var(--blue-800);
+    padding: 40px 2rem 36px;
+    text-align: center;
+  }
+  .explore-hero h2 { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; color: white; margin-bottom: 8px; }
+  .explore-hero p { font-size: 14px; color: rgba(255,255,255,0.7); }
+  .explore-search-wrap { max-width: 600px; margin: 20px auto 0; display: flex; gap: 10px; }
+  .explore-layout { max-width: 1100px; margin: 0 auto; padding: 28px 2rem; }
+  .explore-filters { display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; align-items: center; }
+  .filter-label { font-size: 13px; font-weight: 500; color: var(--gray-600); margin-right: 4px; }
+  .filter-chip {
+    font-size: 13px; padding: 6px 14px; border-radius: 20px;
+    border: 1px solid var(--gray-200); background: white;
+    color: var(--gray-700); cursor: pointer; transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .filter-chip:hover, .filter-chip.active { background: var(--blue-600); color: white; border-color: var(--blue-600); }
+  .mentors-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+  .mentor-card {
+    background: white; border-radius: var(--radius-lg);
+    border: 1px solid var(--gray-200); padding: 20px;
+    cursor: pointer; transition: all 0.2s;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .mentor-card:hover { border-color: var(--blue-300); box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+  .mentor-card-top { display: flex; align-items: center; gap: 12px; }
+  .mentor-card-avatar { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; flex-shrink: 0; }
+  .mentor-card-name { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; color: var(--gray-900); }
+  .mentor-card-role { font-size: 12px; color: var(--gray-500); margin-top: 2px; display: flex; align-items: center; gap: 4px; }
+  .mentor-card-bio { font-size: 13px; color: var(--gray-600); line-height: 1.6; }
+  .mentor-card-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+  .mentor-card-stats { display: flex; gap: 16px; padding-top: 12px; border-top: 1px solid var(--gray-100); }
+  .mentor-card-stat-val { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; color: var(--gray-800); }
+  .mentor-card-stat-lbl { font-size: 10px; color: var(--gray-400); }
+  .star-rating { color: #FBBF24; font-size: 12px; }
+
+  /* ===== NOTIFICATIONS ===== */
+  .notif-panel { max-width: 600px; margin: 0 auto; padding: 28px 2rem; }
+  .notif-item { display: flex; gap: 12px; padding: 14px 16px; border-radius: var(--radius-md); margin-bottom: 6px; background: white; border: 1px solid var(--gray-200); transition: all 0.15s; cursor: pointer; }
+  .notif-item:hover { border-color: var(--blue-200); background: var(--blue-50); }
+  .notif-item.unread { border-left: 3px solid var(--blue-500); }
+  .notif-icon { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 17px; }
+  .notif-content { flex: 1; }
+  .notif-text { font-size: 14px; color: var(--gray-800); line-height: 1.5; }
+  .notif-text strong { font-weight: 600; color: var(--gray-900); }
+  .notif-time { font-size: 11px; color: var(--gray-400); margin-top: 4px; }
+  .notif-dot { width: 8px; height: 8px; background: var(--blue-500); border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+
+  /* Divider */
+  .divider { height: 1px; background: var(--gray-100); margin: 6px 0; }
+
+  /* Footer */
+  .footer { background: var(--gray-900); color: rgba(255,255,255,0.6); text-align: center; padding: 20px; font-size: 13px; margin-top: 40px; }
+  .footer strong { color: white; }
+
+  /* Animations */
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  .page.active > * { animation: fadeInUp 0.35s ease both; }
+
+  /* Responsive tweaks */
+  @media (max-width: 900px) {
+    .main-layout { grid-template-columns: 1fr; }
+    .sidebar-left, .sidebar-right { display: none; }
+    .profile-grid { grid-template-columns: 1fr; }
+    .post-detail-layout { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="navbar-logo" onclick="showPage('home')">
+    <div class="icon-logo"><i class="ti ti-droplet-filled"></i></div>
+    LaSource<span class="dot">.</span>
+  </div>
+  <div class="nav-links">
+    <button class="nav-link active" onclick="setNav(this,'home')">Accueil</button>
+    <button class="nav-link" onclick="setNav(this,'explore')">Explorer</button>
+    <button class="nav-link" onclick="setNav(this,'notifs')">Notifications</button>
+  </div>
+  <div class="nav-actions">
+    <button class="nav-icon-btn" onclick="setNav(document.querySelectorAll('.nav-link')[2],'notifs')">
+      <i class="ti ti-bell"></i>
+      <span class="notif-dot"></span>
+    </button>
+    <div class="avatar-nav" onclick="setNav(document.querySelectorAll('.nav-link')[0],'profile')">AK</div>
+  </div>
+</nav>
+
+<!-- ======================== PAGE : HOME ======================== -->
+<div id="page-home" class="page active">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-eyebrow"><i class="ti ti-sparkles"></i> La plateforme de mentorat pour la jeunesse africaine</div>
+    <h1>Trouve un mentor,<br><span>change ta trajectoire.</span></h1>
+    <p>Des milliers d'experts disponibles pour répondre à tes questions, guider tes choix et t'aider à avancer.</p>
+    <div class="hero-cta">
+      <button class="btn btn-accent btn-lg" onclick="setNav(document.querySelectorAll('.nav-link')[1],'explore')"><i class="ti ti-search" style="vertical-align:-2px;margin-right:6px;"></i>Trouver un mentor</button>
+      <button class="btn btn-lg" style="background:rgba(255,255,255,0.15);color:white;border:1px solid rgba(255,255,255,0.3);">Je suis mentor</button>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="hero-stat-val">2 400+</div><div class="hero-stat-lbl">Mentors actifs</div></div>
+      <div class="hero-stat"><div class="hero-stat-val">18 700</div><div class="hero-stat-lbl">Questions répondues</div></div>
+      <div class="hero-stat"><div class="hero-stat-val">47</div><div class="hero-stat-lbl">Pays représentés</div></div>
+      <div class="hero-stat"><div class="hero-stat-val">4.8★</div><div class="hero-stat-lbl">Note moyenne</div></div>
+    </div>
+  </div>
+
+  <!-- Search bar -->
+  <div class="search-section">
+    <div class="search-bar">
+      <div class="search-input-wrap">
+        <i class="ti ti-search"></i>
+        <input type="text" placeholder="Rechercher un mentor, un secteur, une question…">
+      </div>
+      <select class="filter-select">
+        <option value="">🌍 Tous les pays</option>
+        <option>Côte d'Ivoire</option>
+        <option>Sénégal</option>
+        <option>Bénin</option>
+        <option>Cameroun</option>
+        <option>Mali</option>
+        <option>Togo</option>
+        <option>Ghana</option>
+        <option>France</option>
+        <option>Canada</option>
+      </select>
+      <select class="filter-select">
+        <option value="">📂 Tous les secteurs</option>
+        <option>Technologie</option>
+        <option>Médecine</option>
+        <option>Droit</option>
+        <option>Finance</option>
+        <option>Entrepreneuriat</option>
+        <option>Arts & Design</option>
+        <option>Sciences</option>
+        <option>Éducation</option>
+      </select>
+      <button class="btn btn-primary btn-md"><i class="ti ti-filter" style="vertical-align:-2px;margin-right:5px;"></i>Filtrer</button>
+    </div>
+  </div>
+
+  <!-- Main layout -->
+  <div class="main-layout">
+
+    <!-- Left sidebar -->
+    <aside class="sidebar-left">
+      <div class="sidebar-card">
+        <div class="sidebar-title">Catégories</div>
+        <div class="cat-item active" onclick="this.parentElement.querySelectorAll('.cat-item').forEach(x=>x.classList.remove('active'));this.classList.add('active')">
+          <div class="cat-icon" style="background:#EBF3FF;"><i class="ti ti-layout-grid" style="color:var(--blue-600);font-size:15px;"></i></div>
+          <span>Tout</span><span class="cat-count">1.2k</span>
+        </div>
+        <div class="cat-item" onclick="this.parentElement.querySelectorAll('.cat-item').forEach(x=>x.classList.remove('active'));this.classList.add('active')">
+          <div class="cat-icon" style="background:#EFF6FF;"><i class="ti ti-device-laptop" style="color:#3B82F6;font-size:15px;"></i></div>
+          <span>Technologie</span><span class="cat-count">348</span>
+        </div>
+        <div class="cat-item" onclick="this.parentElement.querySelectorAll('.cat-item').forEach(x=>x.classList.remove('active'));this.classList.add('active')">
+          <div class="cat-icon" style="background:#F0FDF4;"><i class="ti ti-stethoscope" style="color:#16A34A;font-size:15px;"></i></div>
+          <span>Médecine</span><span class="cat-count">210</span>
+        </div>
+        <div class="cat-item" onclick="this.parentElement.querySelectorAll('.cat-item').forEach(x=>x.classList.remove('active'));this.classList.add('active')">
+          <div class="cat-icon" style="background:#FDF4FF;"><i class="ti ti-scale" style="color:#9333EA;font-size:15px;"></i></div>
+          <span>Droit</span><span class="cat-count">97</span>
+        </div>
+        <div class="cat-item" onclick="this.parentElement.querySelectorAll('.cat-item').forEach(x=>x.classList.remove('active'));this.classList.add('active')">
+          <div class="cat-icon" style="background:#FFF7ED;"><i class="ti ti-chart-line" style="color:#EA580C;font-size:15px;"></i></div>
+          <span>Finance</span><span class="cat-count">183</span>
+        </div>
+        <div class="cat-item" onclick="this.parentElement.querySelectorAll('.cat-item').forEach(x=>x.classList.remove('active'));this.classList.add('active')">
+          <div class="cat-icon" style="background:#FFF1F2;"><i class="ti ti-rocket" style="color:#E11D48;font-size:15px;"></i></div>
+          <span>Entrepreneuriat</span><span class="cat-count">261</span>
+        </div>
+        <div class="cat-item" onclick="this.parentElement.querySelectorAll('.cat-item').forEach(x=>x.classList.remove('active'));this.classList.add('active')">
+          <div class="cat-icon" style="background:#FFFBEB;"><i class="ti ti-palette" style="color:#D97706;font-size:15px;"></i></div>
+          <span>Arts & Design</span><span class="cat-count">119</span>
+        </div>
+        <div class="cat-item" onclick="this.parentElement.querySelectorAll('.cat-item').forEach(x=>x.classList.remove('active'));this.classList.add('active')">
+          <div class="cat-icon" style="background:#F0FDFA;"><i class="ti ti-flask" style="color:#0D9488;font-size:15px;"></i></div>
+          <span>Sciences</span><span class="cat-count">142</span>
+        </div>
+      </div>
+      <div class="sidebar-card">
+        <div class="sidebar-title">Mon profil</div>
+        <div style="display:flex;align-items:center;gap:10px;padding:4px 0;">
+          <div class="avatar" style="width:44px;height:44px;background:var(--blue-600);color:white;font-size:14px;">AK</div>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--gray-800);">Amara Koné</div>
+            <div style="font-size:11px;color:var(--gray-500);">Mentor · Tech</div>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;">
+          <div style="text-align:center;padding:8px;background:var(--gray-50);border-radius:8px;">
+            <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--blue-600);">142</div>
+            <div style="font-size:10px;color:var(--gray-500);">Réponses</div>
+          </div>
+          <div style="text-align:center;padding:8px;background:var(--gray-50);border-radius:8px;">
+            <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--blue-600);">4.9</div>
+            <div style="font-size:10px;color:var(--gray-500);">Note ★</div>
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-sm" style="width:100%;margin-top:10px;" onclick="setNav(document.querySelectorAll('.nav-link')[0],'profile')">Voir mon profil</button>
+      </div>
+    </aside>
+
+    <!-- Feed -->
+    <main>
+      <div class="feed-header">
+        <span class="feed-title">Fil d'actualité</span>
+        <div class="sort-tabs">
+          <button class="sort-tab active" onclick="this.parentElement.querySelectorAll('.sort-tab').forEach(x=>x.classList.remove('active'));this.classList.add('active')">Récents</button>
+          <button class="sort-tab" onclick="this.parentElement.querySelectorAll('.sort-tab').forEach(x=>x.classList.remove('active'));this.classList.add('active')">Populaires</button>
+          <button class="sort-tab" onclick="this.parentElement.querySelectorAll('.sort-tab').forEach(x=>x.classList.remove('active'));this.classList.add('active')">Sans réponse</button>
+        </div>
+      </div>
+
+      <!-- Post 1 -->
+      <div class="post-card pinned" onclick="setNav(document.querySelectorAll('.nav-link')[0],'post')">
+        <div class="pinned-label"><i class="ti ti-pin" style="font-size:13px;"></i> Question épinglée</div>
+        <div class="post-top">
+          <div class="avatar" style="background:#DBEAFE;color:var(--blue-700);">MN</div>
+          <div class="post-meta">
+            <div class="post-author">Marie Ndiaye</div>
+            <div class="post-info">
+              <i class="ti ti-map-pin" style="font-size:12px;"></i> Dakar, Sénégal
+              <span>·</span> il y a 3 jours
+              <span>·</span> <span class="badge badge-blue">Orientation</span>
+            </div>
+          </div>
+        </div>
+        <div class="post-body">Vaut-il mieux faire une licence en informatique en France ou rester en Afrique ? Je suis admise à Paris 6 mais aussi à l'ESP de Dakar. Je suis perdue entre les deux options et les implications financières, familiales et professionnelles...</div>
+        <div class="post-bottom">
+          <button class="post-action liked"><i class="ti ti-heart-filled"></i> 87</button>
+          <button class="post-action"><i class="ti ti-message-2"></i> 24 réponses</button>
+          <button class="post-action"><i class="ti ti-share-2"></i></button>
+          <button class="see-answer">Voir les réponses <i class="ti ti-arrow-right" style="font-size:13px;"></i></button>
+        </div>
+      </div>
+
+      <!-- Post 2 -->
+      <div class="post-card" onclick="setNav(document.querySelectorAll('.nav-link')[0],'post')">
+        <div class="post-top">
+          <div class="avatar" style="background:#F0FDF4;color:#166534;">YD</div>
+          <div class="post-meta">
+            <div class="post-author">Yusuf Diallo</div>
+            <div class="post-info">
+              <i class="ti ti-map-pin" style="font-size:12px;"></i> Cotonou, Bénin
+              <span>·</span> il y a 5h
+              <span>·</span> <span class="badge badge-green">Carrière</span>
+            </div>
+          </div>
+        </div>
+        <div class="post-body">Comment construire un portfolio de développeur web convaincant quand on n'a encore aucune expérience professionnelle ? J'ai réalisé 3 projets personnels mais je ne sais pas comment les mettre en valeur.</div>
+        <div class="post-bottom">
+          <button class="post-action"><i class="ti ti-heart"></i> 31</button>
+          <button class="post-action"><i class="ti ti-message-2"></i> 9 réponses</button>
+          <button class="post-action"><i class="ti ti-share-2"></i></button>
+          <button class="see-answer">Voir les réponses <i class="ti ti-arrow-right" style="font-size:13px;"></i></button>
+        </div>
+      </div>
+
+      <!-- Post 3 -->
+      <div class="post-card" onclick="setNav(document.querySelectorAll('.nav-link')[0],'post')">
+        <div class="post-top">
+          <div class="avatar" style="background:#FDF4FF;color:#7E22CE;">FK</div>
+          <div class="post-meta">
+            <div class="post-author">Fatou Kamara</div>
+            <div class="post-info">
+              <i class="ti ti-map-pin" style="font-size:12px;"></i> Abidjan, Côte d'Ivoire
+              <span>·</span> il y a 2h
+              <span>·</span> <span class="badge badge-purple">Études</span>
+            </div>
+          </div>
+        </div>
+        <div class="post-body">Je suis en terminale S et je veux faire de l'informatique, mais ma famille pense que "c'est un domaine pour les garçons". Comment avez-vous vécu ce genre de pression familiale et comment l'avez-vous surmontée ?</div>
+        <div class="post-bottom">
+          <button class="post-action liked"><i class="ti ti-heart-filled"></i> 54</button>
+          <button class="post-action"><i class="ti ti-message-2"></i> 18 réponses</button>
+          <button class="post-action"><i class="ti ti-share-2"></i></button>
+          <button class="see-answer">Voir les réponses <i class="ti ti-arrow-right" style="font-size:13px;"></i></button>
+        </div>
+      </div>
+
+      <!-- Post 4 -->
+      <div class="post-card" onclick="setNav(document.querySelectorAll('.nav-link')[0],'post')">
+        <div class="post-top">
+          <div class="avatar" style="background:#FFF7ED;color:#C2410C;">KB</div>
+          <div class="post-meta">
+            <div class="post-author">Kofi Boateng</div>
+            <div class="post-info">
+              <i class="ti ti-map-pin" style="font-size:12px;"></i> Accra, Ghana
+              <span>·</span> il y a 1 jour
+              <span>·</span> <span class="badge badge-orange">Finance</span>
+            </div>
+          </div>
+        </div>
+        <div class="post-body">Quelles sont les meilleures ressources gratuites pour apprendre la finance d'entreprise quand on est en licence de gestion ? J'ai accès à YouTube et Coursera. Je veux préparer une carrière dans l'investissement.</div>
+        <div class="post-bottom">
+          <button class="post-action"><i class="ti ti-heart"></i> 22</button>
+          <button class="post-action"><i class="ti ti-message-2"></i> 6 réponses</button>
+          <button class="post-action"><i class="ti ti-share-2"></i></button>
+          <button class="see-answer">Voir les réponses <i class="ti ti-arrow-right" style="font-size:13px;"></i></button>
+        </div>
+      </div>
+
+      <!-- Post 5 -->
+      <div class="post-card" onclick="setNav(document.querySelectorAll('.nav-link')[0],'post')">
+        <div class="post-top">
+          <div class="avatar" style="background:#F0FDFA;color:#0F766E;">AT</div>
+          <div class="post-meta">
+            <div class="post-author">Amina Touré</div>
+            <div class="post-info">
+              <i class="ti ti-map-pin" style="font-size:12px;"></i> Bamako, Mali
+              <span>·</span> il y a 4h
+              <span>·</span> <span class="badge badge-teal">Médecine</span>
+            </div>
+          </div>
+        </div>
+        <div class="post-body">Je suis en PACES (1ère année médecine) et je peine vraiment avec l'anatomie. Est-ce que quelqu'un a des méthodes efficaces pour mémoriser les nerfs crâniens et les structures du système nerveux central ?</div>
+        <div class="post-bottom">
+          <button class="post-action"><i class="ti ti-heart"></i> 41</button>
+          <button class="post-action"><i class="ti ti-message-2"></i> 11 réponses</button>
+          <button class="post-action"><i class="ti ti-share-2"></i></button>
+          <button class="see-answer">Voir les réponses <i class="ti ti-arrow-right" style="font-size:13px;"></i></button>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Right sidebar -->
+    <aside class="sidebar-right">
+      <div class="sidebar-card" style="margin-bottom:14px;">
+        <div class="sidebar-title">Mentors suggérés</div>
+        <div class="mentor-mini" onclick="setNav(document.querySelectorAll('.nav-link')[0],'profile')">
+          <div class="avatar" style="width:38px;height:38px;font-size:12px;background:var(--blue-600);color:white;">AK</div>
+          <div class="mentor-mini-info">
+            <div class="mentor-mini-name">Amara Koné</div>
+            <div class="mentor-mini-role"><i class="ti ti-code" style="font-size:11px;"></i> Tech · Abidjan</div>
+          </div>
+          <button class="follow-btn">Suivre</button>
+        </div>
+        <div class="mentor-mini">
+          <div class="avatar" style="width:38px;height:38px;font-size:12px;background:#9333EA;color:white;">DR</div>
+          <div class="mentor-mini-info">
+            <div class="mentor-mini-name">Dr. Rachid Bah</div>
+            <div class="mentor-mini-role"><i class="ti ti-stethoscope" style="font-size:11px;"></i> Médecine · Paris</div>
+          </div>
+          <button class="follow-btn">Suivre</button>
+        </div>
+        <div class="mentor-mini">
+          <div class="avatar" style="width:38px;height:38px;font-size:12px;background:#0D9488;color:white;">SN</div>
+          <div class="mentor-mini-info">
+            <div class="mentor-mini-name">Sylvie Ndoye</div>
+            <div class="mentor-mini-role"><i class="ti ti-rocket" style="font-size:11px;"></i> Startup · Dakar</div>
+          </div>
+          <button class="follow-btn">Suivre</button>
+        </div>
+        <div class="mentor-mini">
+          <div class="avatar" style="width:38px;height:38px;font-size:12px;background:#D97706;color:white;">JM</div>
+          <div class="mentor-mini-info">
+            <div class="mentor-mini-name">Jean Mendy</div>
+            <div class="mentor-mini-role"><i class="ti ti-scale" style="font-size:11px;"></i> Droit · Montréal</div>
+          </div>
+          <button class="follow-btn">Suivre</button>
+        </div>
+        <button class="btn btn-secondary btn-sm" style="width:100%;margin-top:8px;" onclick="setNav(document.querySelectorAll('.nav-link')[1],'explore')">Voir tous les mentors</button>
+      </div>
+
+      <div class="sidebar-card">
+        <div class="sidebar-title">Tendances</div>
+        <div class="trending-item">
+          <div class="trending-num">1</div>
+          <div>
+            <div class="trending-text">#PortfolioSansExpérience</div>
+            <div class="trending-count">42 questions ce mois</div>
+          </div>
+        </div>
+        <div class="trending-item">
+          <div class="trending-num">2</div>
+          <div>
+            <div class="trending-text">#ÉtudesEnFrance</div>
+            <div class="trending-count">38 questions ce mois</div>
+          </div>
+        </div>
+        <div class="trending-item">
+          <div class="trending-num">3</div>
+          <div>
+            <div class="trending-text">#PremièreAnnéeMédecine</div>
+            <div class="trending-count">31 questions ce mois</div>
+          </div>
+        </div>
+        <div class="trending-item">
+          <div class="trending-num">4</div>
+          <div>
+            <div class="trending-text">#StartupAfrique</div>
+            <div class="trending-count">27 questions ce mois</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="footer">Fait avec ❤️ pour la jeunesse africaine · <strong>LaSource.</strong> © 2025</div>
+</div>
+
+<!-- ======================== PAGE : EXPLORE ======================== -->
+<div id="page-explore" class="page">
+  <div class="explore-hero">
+    <h2>Explorer les mentors</h2>
+    <p>Trouve le mentor idéal parmi notre communauté d'experts</p>
+    <div class="explore-search-wrap">
+      <div class="search-input-wrap" style="background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.25);">
+        <i class="ti ti-search" style="color:rgba(255,255,255,0.6);"></i>
+        <input type="text" placeholder="Nom, secteur, compétence…" style="color:white;" oninput="this.style.color='white'">
+      </div>
+      <button class="btn btn-accent btn-md">Rechercher</button>
+    </div>
+  </div>
+
+  <div class="explore-layout">
+    <div class="explore-filters">
+      <span class="filter-label"><i class="ti ti-map-pin" style="font-size:14px;vertical-align:-2px;"></i> Pays :</span>
+      <button class="filter-chip active" onclick="this.closest('.explore-filters').querySelectorAll('.filter-chip').forEach(x=>x.classList.remove('active'));this.classList.add('active')">Tous</button>
+      <button class="filter-chip" onclick="this.closest('.explore-filters').querySelectorAll('.filter-chip').forEach(x=>x.classList.remove('active'));this.classList.add('active')">Côte d'Ivoire</button>
+      <button class="filter-chip" onclick="this.closest('.explore-filters').querySelectorAll('.filter-chip').forEach(x=>x.classList.remove('active'));this.classList.add('active')">Sénégal</button>
+      <button class="filter-chip" onclick="this.closest('.explore-filters').querySelectorAll('.filter-chip').forEach(x=>x.classList.remove('active'));this.classList.add('active')">Bénin</button>
+      <button class="filter-chip" onclick="this.closest('.explore-filters').querySelectorAll('.filter-chip').forEach(x=>x.classList.remove('active'));this.classList.add('active')">France</button>
+      <button class="filter-chip" onclick="this.closest('.explore-filters').querySelectorAll('.filter-chip').forEach(x=>x.classList.remove('active'));this.classList.add('active')">Canada</button>
+    </div>
+
+    <div class="explore-filters" style="margin-top:-10px;">
+      <span class="filter-label"><i class="ti ti-category" style="font-size:14px;vertical-align:-2px;"></i> Secteur :</span>
+      <button class="filter-chip active" onclick="this.closest('.explore-filters').querySelectorAll('.filter-chip').forEach(x=>x.classList.remove('active'));this.classList.add('active')">Tous</button>
+      <button class="filter-chip" onclick="this.closest('.explore-filters').querySelectorAll('.filter-chip').forEach(x=>x.classList.remove('active'));this.classList.add('active')">Technologie</button>
+      <button class="filter-chip" onclick="this.closest('.explore-filters').querySelectorAll('.filter-chip').forEach(x=>x.classList.remove('active'));this.classList.add('active')">Médecine</button>
+      <button class="filter-chip" onclick="this.closest('.explore-filters').querySelectorAll('.filter-chip').forEach(x=>x.classList.remove('active'));this.classList.add('active')">Droit</button>
+      <button class="filter-chip" onclick="this.closest('.explore-filters').querySelectorAll('.filter-chip').forEach(x=>x.classList.remove('active'));this.classList.add('active')">Finance</button>
+      <button class="filter-chip" onclick="this.closest('.explore-filters').querySelectorAll('.filter-chip').forEach(x=>x.classList.remove('active'));this.classList.add('active')">Entrepreneuriat</button>
+      <button class="filter-chip" onclick="this.closest('.explore-filters').querySelectorAll('.filter-chip').forEach(x=>x.classList.remove('active'));this.classList.add('active')">Arts & Design</button>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-top:4px;">
+      <span style="font-size:14px;color:var(--gray-600);"><strong style="color:var(--gray-800);">2 418</strong> mentors trouvés</span>
+      <select class="filter-select" style="min-width:160px;height:36px;">
+        <option>Trier par : Popularité</option>
+        <option>Trier par : Note</option>
+        <option>Trier par : Récents</option>
+      </select>
+    </div>
+
+    <div class="mentors-grid">
+      <!-- Mentor 1 -->
+      <div class="mentor-card" onclick="setNav(document.querySelectorAll('.nav-link')[0],'profile')">
+        <div class="mentor-card-top">
+          <div class="mentor-card-avatar" style="background:var(--blue-600);color:white;">AK</div>
+          <div>
+            <div class="mentor-card-name">Amara Koné</div>
+            <div class="mentor-card-role"><i class="ti ti-map-pin" style="font-size:11px;"></i> Abidjan, CI</div>
+          </div>
+        </div>
+        <div class="mentor-card-bio">Ingénieure logiciel avec 6 ans d'expérience. Spécialisée en développement web et IA.</div>
+        <div class="mentor-card-tags">
+          <span class="badge badge-blue">Tech</span>
+          <span class="badge badge-purple">IA</span>
+          <span class="badge badge-teal">Orientation</span>
+        </div>
+        <div class="mentor-card-stats">
+          <div><div class="mentor-card-stat-val" style="color:var(--blue-600);">142</div><div class="mentor-card-stat-lbl">Réponses</div></div>
+          <div><div class="mentor-card-stat-val" style="color:#FBBF24;">4.9★</div><div class="mentor-card-stat-lbl">Note</div></div>
+          <div style="margin-left:auto;"><button class="btn btn-primary btn-sm">Suivre</button></div>
+        </div>
+      </div>
+
+      <!-- Mentor 2 -->
+      <div class="mentor-card">
+        <div class="mentor-card-top">
+          <div class="mentor-card-avatar" style="background:#9333EA;color:white;">DR</div>
+          <div>
+            <div class="mentor-card-name">Dr. Rachid Bah</div>
+            <div class="mentor-card-role"><i class="ti ti-map-pin" style="font-size:11px;"></i> Paris, France</div>
+          </div>
+        </div>
+        <div class="mentor-card-bio">Médecin généraliste, ancien interne des hôpitaux. Guide les étudiants en PACES et médecine.</div>
+        <div class="mentor-card-tags">
+          <span class="badge badge-teal">Médecine</span>
+          <span class="badge badge-green">PACES</span>
+          <span class="badge badge-purple">Études</span>
+        </div>
+        <div class="mentor-card-stats">
+          <div><div class="mentor-card-stat-val" style="color:var(--blue-600);">218</div><div class="mentor-card-stat-lbl">Réponses</div></div>
+          <div><div class="mentor-card-stat-val" style="color:#FBBF24;">4.8★</div><div class="mentor-card-stat-lbl">Note</div></div>
+          <div style="margin-left:auto;"><button class="btn btn-primary btn-sm">Suivre</button></div>
+        </div>
+      </div>
+
+      <!-- Mentor 3 -->
+      <div class="mentor-card">
+        <div class="mentor-card-top">
+          <div class="mentor-card-avatar" style="background:#0D9488;color:white;">SN</div>
+          <div>
+            <div class="mentor-card-name">Sylvie Ndoye</div>
+            <div class="mentor-card-role"><i class="ti ti-map-pin" style="font-size:11px;"></i> Dakar, Sénégal</div>
+          </div>
+        </div>
+        <div class="mentor-card-bio">Fondatrice de 2 startups EdTech. Accompagne les jeunes entrepreneurs de l'idée au lancement.</div>
+        <div class="mentor-card-tags">
+          <span class="badge badge-orange">Startup</span>
+          <span class="badge badge-green">EdTech</span>
+          <span class="badge badge-teal">Financement</span>
+        </div>
+        <div class="mentor-card-stats">
+          <div><div class="mentor-card-stat-val" style="color:var(--blue-600);">89</div><div class="mentor-card-stat-lbl">Réponses</div></div>
+          <div><div class="mentor-card-stat-val" style="color:#FBBF24;">5.0★</div><div class="mentor-card-stat-lbl">Note</div></div>
+          <div style="margin-left:auto;"><button class="btn btn-primary btn-sm">Suivre</button></div>
+        </div>
+      </div>
+
+      <!-- Mentor 4 -->
+      <div class="mentor-card">
+        <div class="mentor-card-top">
+          <div class="mentor-card-avatar" style="background:#D97706;color:white;">JM</div>
+          <div>
+            <div class="mentor-card-name">Jean Mendy</div>
+            <div class="mentor-card-role"><i class="ti ti-map-pin" style="font-size:11px;"></i> Montréal, Canada</div>
+          </div>
+        </div>
+        <div class="mentor-card-bio">Avocat d'affaires spécialisé en droit des sociétés. Conseille sur les études en droit à l'international.</div>
+        <div class="mentor-card-tags">
+          <span class="badge badge-purple">Droit</span>
+          <span class="badge badge-blue">International</span>
+        </div>
+        <div class="mentor-card-stats">
+          <div><div class="mentor-card-stat-val" style="color:var(--blue-600);">76</div><div class="mentor-card-stat-lbl">Réponses</div></div>
+          <div><div class="mentor-card-stat-val" style="color:#FBBF24;">4.7★</div><div class="mentor-card-stat-lbl">Note</div></div>
+          <div style="margin-left:auto;"><button class="btn btn-primary btn-sm">Suivre</button></div>
+        </div>
+      </div>
+
+      <!-- Mentor 5 -->
+      <div class="mentor-card">
+        <div class="mentor-card-top">
+          <div class="mentor-card-avatar" style="background:#E11D48;color:white;">LC</div>
+          <div>
+            <div class="mentor-card-name">Laure Cissé</div>
+            <div class="mentor-card-role"><i class="ti ti-map-pin" style="font-size:11px;"></i> Lomé, Togo</div>
+          </div>
+        </div>
+        <div class="mentor-card-bio">Analyste financière senior. Passionnée par l'éducation financière des jeunes Africains.</div>
+        <div class="mentor-card-tags">
+          <span class="badge badge-orange">Finance</span>
+          <span class="badge badge-green">Bourse</span>
+          <span class="badge badge-teal">Investissement</span>
+        </div>
+        <div class="mentor-card-stats">
+          <div><div class="mentor-card-stat-val" style="color:var(--blue-600);">104</div><div class="mentor-card-stat-lbl">Réponses</div></div>
+          <div><div class="mentor-card-stat-val" style="color:#FBBF24;">4.9★</div><div class="mentor-card-stat-lbl">Note</div></div>
+          <div style="margin-left:auto;"><button class="btn btn-primary btn-sm">Suivre</button></div>
+        </div>
+      </div>
+
+      <!-- Mentor 6 -->
+      <div class="mentor-card">
+        <div class="mentor-card-top">
+          <div class="mentor-card-avatar" style="background:#0284C7;color:white;">OT</div>
+          <div>
+            <div class="mentor-card-name">Oumar Traoré</div>
+            <div class="mentor-card-role"><i class="ti ti-map-pin" style="font-size:11px;"></i> Bamako, Mali</div>
+          </div>
+        </div>
+        <div class="mentor-card-bio">Designer UX/UI freelance, ex-agence Ogilvy. Aide les créatifs à se lancer dans l'industrie.</div>
+        <div class="mentor-card-tags">
+          <span class="badge badge-pink">Design</span>
+          <span class="badge badge-orange">Freelance</span>
+          <span class="badge badge-blue">UX</span>
+        </div>
+        <div class="mentor-card-stats">
+          <div><div class="mentor-card-stat-val" style="color:var(--blue-600);">63</div><div class="mentor-card-stat-lbl">Réponses</div></div>
+          <div><div class="mentor-card-stat-val" style="color:#FBBF24;">4.8★</div><div class="mentor-card-stat-lbl">Note</div></div>
+          <div style="margin-left:auto;"><button class="btn btn-primary btn-sm">Suivre</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== PAGE : PROFILE ======================== -->
+<div id="page-profile" class="page">
+  <div class="profile-banner"></div>
+  <div class="profile-header-content">
+    <div class="profile-avatar-wrap">
+      <div class="profile-avatar">AK</div>
+      <div class="verified-badge"><i class="ti ti-check"></i></div>
+    </div>
+  </div>
+  <div class="profile-body">
+    <div class="profile-top-bar">
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-primary btn-md"><i class="ti ti-message-circle" style="vertical-align:-2px;margin-right:6px;"></i>Contacter</button>
+        <button class="btn btn-outline btn-md"><i class="ti ti-user-plus" style="vertical-align:-2px;margin-right:6px;"></i>Suivre</button>
+        <button class="btn btn-outline btn-md" style="padding:9px 12px;"><i class="ti ti-dots" style="font-size:16px;"></i></button>
+      </div>
+    </div>
+    <div class="profile-info">
+      <div class="profile-name">Amara Koné</div>
+      <div class="profile-title">
+        <i class="ti ti-briefcase" style="font-size:15px;color:var(--gray-400);"></i> Ingénieure logiciel · TechLab Africa
+        <span style="color:var(--gray-300);">·</span>
+        <i class="ti ti-map-pin" style="font-size:14px;color:var(--gray-400);"></i> Abidjan, Côte d'Ivoire
+      </div>
+      <div class="profile-tags">
+        <span class="badge badge-blue"><i class="ti ti-code" style="font-size:11px;"></i> Technologie</span>
+        <span class="badge badge-teal"><i class="ti ti-school" style="font-size:11px;"></i> Éducation</span>
+        <span class="badge badge-orange"><i class="ti ti-rocket" style="font-size:11px;"></i> Entrepreneuriat</span>
+        <span class="badge badge-purple"><i class="ti ti-language" style="font-size:11px;"></i> Orientation</span>
+      </div>
+      <div class="profile-bio">Passionnée par le développement web et l'éducation au numérique en Afrique. J'ai 6 ans d'expérience en ingénierie logicielle et je réponds volontiers aux questions sur l'orientation tech, la reconversion, la vie étudiante et la carrière.</div>
+    </div>
+    <div class="profile-stats-bar">
+      <div class="profile-stat"><div class="profile-stat-val" style="color:var(--blue-600);">142</div><div class="profile-stat-lbl">Réponses données</div></div>
+      <div class="profile-stat"><div class="profile-stat-val" style="color:#FBBF24;">4.9★</div><div class="profile-stat-lbl">Note moyenne</div></div>
+      <div class="profile-stat"><div class="profile-stat-val">3 ans</div><div class="profile-stat-lbl">Sur LaSource</div></div>
+      <div class="profile-stat"><div class="profile-stat-val">1 240</div><div class="profile-stat-lbl">Abonnés</div></div>
+      <div class="profile-stat"><div class="profile-stat-val" style="color:#10B981;">98%</div><div class="profile-stat-lbl">Taux de réponse</div></div>
+    </div>
+    <div class="profile-tabs">
+      <button class="profile-tab active" onclick="this.parentElement.querySelectorAll('.profile-tab').forEach(x=>x.classList.remove('active'));this.classList.add('active')">Publications</button>
+      <button class="profile-tab" onclick="this.parentElement.querySelectorAll('.profile-tab').forEach(x=>x.classList.remove('active'));this.classList.add('active')">Réponses</button>
+      <button class="profile-tab" onclick="this.parentElement.querySelectorAll('.profile-tab').forEach(x=>x.classList.remove('active'));this.classList.add('active')">À propos</button>
+    </div>
+
+    <div class="profile-grid">
+      <div>
+        <div class="post-card pinned" onclick="setNav(document.querySelectorAll('.nav-link')[0],'post')">
+          <div class="pinned-label"><i class="ti ti-pin" style="font-size:13px;"></i> Épinglé</div>
+          <div class="post-top">
+            <div class="avatar" style="background:#DBEAFE;color:var(--blue-700);">MN</div>
+            <div class="post-meta">
+              <div class="post-author">Marie Ndiaye</div>
+              <div class="post-info">il y a 3 jours · <span class="badge badge-blue">Orientation</span></div>
+            </div>
+          </div>
+          <div class="post-body">Vaut-il mieux faire une licence en France ou rester en Afrique pour l'informatique ?</div>
+          <div class="post-bottom">
+            <button class="post-action liked"><i class="ti ti-heart-filled"></i> 87</button>
+            <button class="post-action"><i class="ti ti-message-2"></i> 24 réponses</button>
+            <button class="see-answer">Lire <i class="ti ti-arrow-right" style="font-size:13px;"></i></button>
+          </div>
+        </div>
+        <div class="post-card" onclick="setNav(document.querySelectorAll('.nav-link')[0],'post')">
+          <div class="post-top">
+            <div class="avatar" style="background:#F0FDF4;color:#166534;">YD</div>
+            <div class="post-meta">
+              <div class="post-author">Yusuf Diallo</div>
+              <div class="post-info">il y a 5h · <span class="badge badge-green">Carrière</span></div>
+            </div>
+          </div>
+          <div class="post-body">Comment construire un portfolio convaincant sans expérience professionnelle ?</div>
+          <div class="post-bottom">
+            <button class="post-action"><i class="ti ti-heart"></i> 31</button>
+            <button class="post-action"><i class="ti ti-message-2"></i> 9 réponses</button>
+            <button class="see-answer">Lire <i class="ti ti-arrow-right" style="font-size:13px;"></i></button>
+          </div>
+        </div>
+        <div class="post-card" onclick="setNav(document.querySelectorAll('.nav-link')[0],'post')">
+          <div class="post-top">
+            <div class="avatar" style="background:#FDF4FF;color:#7E22CE;">FK</div>
+            <div class="post-meta">
+              <div class="post-author">Fatou Kamara</div>
+              <div class="post-info">il y a 2h · <span class="badge badge-purple">Études</span></div>
+            </div>
+          </div>
+          <div class="post-body">Comment surmonter la pression familiale quand on veut faire informatique en tant que fille ?</div>
+          <div class="post-bottom">
+            <button class="post-action liked"><i class="ti ti-heart-filled"></i> 54</button>
+            <button class="post-action"><i class="ti ti-message-2"></i> 18 réponses</button>
+            <button class="see-answer">Lire <i class="ti ti-arrow-right" style="font-size:13px;"></i></button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="sidebar-card">
+          <div class="sidebar-title">Compétences</div>
+          <div class="skills-grid">
+            <span class="skill-chip">JavaScript</span>
+            <span class="skill-chip">React</span>
+            <span class="skill-chip">Node.js</span>
+            <span class="skill-chip">Python</span>
+            <span class="skill-chip">Machine Learning</span>
+            <span class="skill-chip">UX Design</span>
+            <span class="skill-chip">Gestion de projet</span>
+          </div>
+        </div>
+        <div class="sidebar-card" style="margin-top:14px;">
+          <div class="sidebar-title">Disponibilité</div>
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 0;">
+            <div style="width:10px;height:10px;background:#10B981;border-radius:50%;flex-shrink:0;"></div>
+            <span style="font-size:13px;color:var(--gray-700);">Disponible pour répondre</span>
+          </div>
+          <div style="font-size:12px;color:var(--gray-500);">Répond en général en moins de 24h</div>
+        </div>
+        <div class="sidebar-card" style="margin-top:14px;">
+          <div class="sidebar-title">Formation</div>
+          <div style="font-size:13px;color:var(--gray-700);padding:6px 0;border-bottom:1px solid var(--gray-100);">
+            <div style="font-weight:500;">École Polytechnique d'Abidjan</div>
+            <div style="color:var(--gray-500);font-size:12px;margin-top:2px;">Master Génie Informatique · 2018</div>
+          </div>
+          <div style="font-size:13px;color:var(--gray-700);padding:6px 0;">
+            <div style="font-weight:500;">Coursera / Google</div>
+            <div style="color:var(--gray-500);font-size:12px;margin-top:2px;">ML Specialization · 2020</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== PAGE : POST DETAIL ======================== -->
+<div id="page-post" class="page">
+  <div class="post-detail-layout">
+    <div class="post-detail-main">
+      <!-- Back button -->
+      <button class="btn btn-outline btn-sm" style="margin-bottom:16px;display:flex;align-items:center;gap:6px;" onclick="setNav(document.querySelectorAll('.nav-link')[0],'home')">
+        <i class="ti ti-arrow-left" style="font-size:14px;"></i> Retour au fil
+      </button>
+
+      <!-- Post complet -->
+      <div class="post-full-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <span class="badge badge-blue" style="font-size:12px;">Orientation</span>
+          <span style="font-size:12px;color:var(--gray-400);">il y a 3 jours</span>
+        </div>
+        <div class="post-full-title">Vaut-il mieux faire une licence en informatique en France ou rester en Afrique ?</div>
+        <div class="post-full-author" onclick="setNav(document.querySelectorAll('.nav-link')[0],'profile')">
+          <div class="avatar" style="background:#DBEAFE;color:var(--blue-700);width:44px;height:44px;">MN</div>
+          <div class="post-full-author-info">
+            <div class="post-full-name">Marie Ndiaye</div>
+            <div class="post-full-sub"><i class="ti ti-map-pin" style="font-size:12px;"></i> Dakar, Sénégal · Étudiante Terminale</div>
+          </div>
+        </div>
+        <div class="post-full-body">
+          Je suis actuellement en terminale scientifique à Dakar et j'ai reçu deux admissions : l'une à Paris 6 (Sorbonne Université) en Licence Informatique, et l'autre à l'École Supérieure Polytechnique de Dakar (ESP).<br><br>
+          Je suis vraiment partagée. D'un côté, Paris offre une réputation internationale, un réseau potentiellement plus large et des opportunités de stages dans des entreprises européennes. De l'autre, l'ESP est proche de ma famille, moins coûteuse, et le secteur tech au Sénégal se développe très rapidement.<br><br>
+          Est-ce que quelqu'un a vécu ce dilemme ? Quels critères avez-vous mis en avant pour décider ? Est-ce que la réputation de l'école compte vraiment dans l'industrie tech ?
+        </div>
+        <div class="post-full-footer">
+          <button class="post-action liked"><i class="ti ti-heart-filled"></i> 87 réactions</button>
+          <button class="post-action"><i class="ti ti-share-2"></i> Partager</button>
+          <button class="post-action"><i class="ti ti-bookmark"></i> Sauvegarder</button>
+        </div>
+      </div>
+
+      <!-- Réponses -->
+      <div class="answers-section">
+        <div class="answers-header">Réponses <span>24</span></div>
+
+        <!-- Réponse mentor -->
+        <div class="answer-card mentor-answer">
+          <div class="answer-author">
+            <div class="avatar" style="background:var(--blue-600);color:white;width:44px;height:44px;">AK</div>
+            <div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--gray-800);cursor:pointer;" onclick="setNav(document.querySelectorAll('.nav-link')[0],'profile')">Amara Koné</span>
+                <span class="mentor-tag"><i class="ti ti-star-filled" style="font-size:10px;"></i> Mentor</span>
+              </div>
+              <div style="font-size:12px;color:var(--gray-400);">Ingénieure logiciel · Abidjan <span style="margin:0 4px;">·</span> il y a 2 jours</div>
+            </div>
+            <div style="margin-left:auto;display:flex;align-items:center;gap:4px;font-size:12px;color:#FBBF24;">★★★★★</div>
+          </div>
+          <div class="answer-body">
+            Excellente question Marie, et je comprends totalement ton dilemme car je l'ai vécu moi-même il y a quelques années.<br><br>
+            <strong>Ma vision honnête :</strong> dans l'industrie tech, ce qui compte énormément ce sont tes compétences réelles, ton portfolio de projets, et ton réseau professionnel — bien plus que le nom de ton école.<br><br>
+            <strong>Ce que je te conseillerais de considérer :</strong><br>
+            · <strong>Si tu veux travailler en Europe</strong> : Paris 6 t'offre un visa étudiant, des stages dans des entreprises européennes, et un réseau continental. C'est un vrai avantage de départ.<br>
+            · <strong>Si tu veux rester en Afrique</strong> : l'ESP est excellente et le marché tech au Sénégal, en Côte d'Ivoire et au Nigeria croît à +30% par an. Tu n'as pas besoin de partir pour réussir.<br><br>
+            La vraie question est : <em>où vois-tu ta vie dans 10 ans ?</em> La réponse à ça devrait guider ton choix davantage que la réputation de l'école.
+          </div>
+          <div class="answer-footer">
+            <button class="post-action liked"><i class="ti ti-heart-filled"></i> 64</button>
+            <button class="post-action"><i class="ti ti-message-2"></i> 8 réponses</button>
+            <button class="post-action"><i class="ti ti-thumb-up"></i> Utile</button>
+          </div>
+        </div>
+
+        <!-- Réponse élève 1 -->
+        <div class="answer-card">
+          <div class="answer-author">
+            <div class="avatar" style="background:#F0FDF4;color:#166534;width:40px;height:40px;font-size:12px;">OB</div>
+            <div>
+              <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:600;color:var(--gray-800);">Ousmane Baldé</div>
+              <div style="font-size:12px;color:var(--gray-400);">Conakry, Guinée · il y a 2 jours</div>
+            </div>
+          </div>
+          <div class="answer-body">J'ai fait le même choix il y a 3 ans et je suis parti en France. Honnêtement, les stages m'ont beaucoup aidé pour construire mon CV. Mais la vie loin de sa famille est vraiment difficile psychologiquement. Si tu as quelqu'un là-bas avec qui t'appuyer, ça aide énormément.</div>
+          <div class="answer-footer">
+            <button class="post-action"><i class="ti ti-heart"></i> 12</button>
+            <button class="post-action"><i class="ti ti-message-2"></i> 2 réponses</button>
+          </div>
+        </div>
+
+        <!-- Réponse élève 2 -->
+        <div class="answer-card">
+          <div class="answer-author">
+            <div class="avatar" style="background:#FFF7ED;color:#C2410C;width:40px;height:40px;font-size:12px;">KS</div>
+            <div>
+              <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:600;color:var(--gray-800);">Kadiatou Sylla</div>
+              <div style="font-size:12px;color:var(--gray-400);">Abidjan, CI · il y a 1 jour</div>
+            </div>
+          </div>
+          <div class="answer-body">Je suis passée par l'ESP et je ne regrette absolument pas ! J'ai décroché un poste chez Orange Sénégal juste après mon diplôme. L'important c'est ce que tu fais de ta formation, pas l'étiquette dessus.</div>
+          <div class="answer-footer">
+            <button class="post-action liked"><i class="ti ti-heart-filled"></i> 29</button>
+            <button class="post-action"><i class="ti ti-message-2"></i> 5 réponses</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Zone de réponse -->
+      <div class="reply-box">
+        <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:600;color:var(--gray-800);margin-bottom:12px;">Ajouter une réponse</div>
+        <div class="reply-top">
+          <div class="avatar" style="background:var(--blue-600);color:white;width:38px;height:38px;font-size:12px;flex-shrink:0;">AK</div>
+          <textarea class="reply-textarea" placeholder="Partage ton expérience ou ton point de vue…"></textarea>
+        </div>
+        <div class="reply-footer">
+          <button class="btn btn-outline btn-sm">Annuler</button>
+          <button class="btn btn-primary btn-sm"><i class="ti ti-send" style="vertical-align:-2px;margin-right:5px;"></i>Publier</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar post -->
+    <aside class="post-sidebar">
+      <div class="sidebar-card" style="margin-bottom:14px;">
+        <div class="sidebar-title">Mentor recommandé</div>
+        <div style="text-align:center;padding:12px 0;">
+          <div class="avatar" style="width:60px;height:60px;font-size:18px;background:var(--blue-600);color:white;margin:0 auto 10px;">AK</div>
+          <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--gray-800);">Amara Koné</div>
+          <div style="font-size:12px;color:var(--gray-500);margin:4px 0 8px;">Ingénieure · Tech · Abidjan</div>
+          <div style="font-size:12px;color:#FBBF24;margin-bottom:12px;">★★★★★ 4.9 (142 réponses)</div>
+          <button class="btn btn-primary btn-sm" style="width:100%;" onclick="setNav(document.querySelectorAll('.nav-link')[0],'profile')">Voir le profil</button>
+        </div>
+      </div>
+
+      <div class="sidebar-card">
+        <div class="sidebar-title">Questions similaires</div>
+        <div style="font-size:13px;color:var(--blue-600);cursor:pointer;padding:8px 0;border-bottom:1px solid var(--gray-100);line-height:1.5;" onclick="setNav(document.querySelectorAll('.nav-link')[0],'post')">Comment choisir entre une grande école et une université classique ?</div>
+        <div style="font-size:13px;color:var(--blue-600);cursor:pointer;padding:8px 0;border-bottom:1px solid var(--gray-100);line-height:1.5;">Quel est le salaire moyen d'un développeur en Afrique de l'Ouest ?</div>
+        <div style="font-size:13px;color:var(--blue-600);cursor:pointer;padding:8px 0;line-height:1.5;">Comment obtenir une bourse pour étudier en Europe depuis l'Afrique ?</div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- ======================== PAGE : NOTIFICATIONS ======================== -->
+<div id="page-notifs" class="page">
+  <div class="notif-panel">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <h2 style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--gray-900);">Notifications</h2>
+      <button class="btn btn-outline btn-sm" style="font-size:12px;">Tout marquer comme lu</button>
+    </div>
+
+    <div style="font-size:12px;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Aujourd'hui</div>
+
+    <div class="notif-item unread" onclick="setNav(document.querySelectorAll('.nav-link')[0],'post')">
+      <div class="notif-icon" style="background:var(--blue-50);color:var(--blue-600);"><i class="ti ti-message-circle"></i></div>
+      <div class="notif-content">
+        <div class="notif-text"><strong>Amara Koné</strong> a répondu à la question de Marie Ndiaye que tu suis : "Vaut-il mieux faire une licence en France..."</div>
+        <div class="notif-time">il y a 2 heures</div>
+      </div>
+      <div class="notif-dot"></div>
+    </div>
+
+    <div class="notif-item unread" onclick="setNav(document.querySelectorAll('.nav-link')[0],'post')">
+      <div class="notif-icon" style="background:#FFF3E8;color:var(--accent);"><i class="ti ti-heart"></i></div>
+      <div class="notif-content">
+        <div class="notif-text"><strong>24 personnes</strong> ont aimé ta réponse à la question de Yusuf Diallo</div>
+        <div class="notif-time">il y a 4 heures</div>
+      </div>
+      <div class="notif-dot"></div>
+    </div>
+
+    <div class="notif-item unread">
+      <div class="notif-icon" style="background:#F0FDF4;color:#16A34A;"><i class="ti ti-user-plus"></i></div>
+      <div class="notif-content">
+        <div class="notif-text"><strong>Sylvie Ndoye</strong> a commencé à te suivre</div>
+        <div class="notif-time">il y a 5 heures</div>
+      </div>
+      <div class="notif-dot"></div>
+    </div>
+
+    <div style="font-size:12px;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.06em;margin:16px 0 8px;">Cette semaine</div>
+
+    <div class="notif-item" onclick="setNav(document.querySelectorAll('.nav-link')[0],'post')">
+      <div class="notif-icon" style="background:var(--blue-50);color:var(--blue-600);"><i class="ti ti-message-2"></i></div>
+      <div class="notif-content">
+        <div class="notif-text"><strong>Fatou Kamara</strong> a posé une nouvelle question dans la catégorie Technologie que tu suis</div>
+        <div class="notif-time">hier</div>
+      </div>
+    </div>
+
+    <div class="notif-item">
+      <div class="notif-icon" style="background:#F5F3FF;color:#7C3AED;"><i class="ti ti-star"></i></div>
+      <div class="notif-content">
+        <div class="notif-text"><strong>Marie Ndiaye</strong> t'a attribué 5 étoiles pour ta réponse sur les études à l'étranger</div>
+        <div class="notif-time">il y a 2 jours</div>
+      </div>
+    </div>
+
+    <div class="notif-item">
+      <div class="notif-icon" style="background:#FFF7ED;color:#C2410C;"><i class="ti ti-trending-up"></i></div>
+      <div class="notif-content">
+        <div class="notif-text">Ta réponse est en <strong>tendance</strong> cette semaine avec 64 réactions !</div>
+        <div class="notif-time">il y a 2 jours</div>
+      </div>
+    </div>
+
+    <div class="notif-item">
+      <div class="notif-icon" style="background:var(--blue-50);color:var(--blue-600);"><i class="ti ti-user-plus"></i></div>
+      <div class="notif-content">
+        <div class="notif-text"><strong>Dr. Rachid Bah</strong> et <strong>2 autres mentors</strong> ont commencé à te suivre</div>
+        <div class="notif-time">il y a 3 jours</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const target = document.getElementById('page-' + pageId);
+    if (target) { target.classList.add('active'); window.scrollTo(0,0); }
+  }
+  function setNav(navEl, pageId) {
+    document.querySelectorAll('.nav-link').forEach(x => x.classList.remove('active'));
+    if (navEl && navEl.classList) navEl.classList.add('active');
+    showPage(pageId);
+  }
+</script>
+</body>
+</html>

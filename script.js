@@ -195,17 +195,27 @@ function choisirRole(elem, role) {
   elem.classList.add('actif');
   etat.roleChoisi = role;
 }
-/* Connexion via l API backend. */
+/* Connexion : via le backend si disponible, sinon via le stockage navigateur. */
 async function seConnecter() {
-  if (!MODE.api) {
-    toast('Serveur indisponible.');
-    afficherVue('vue-app'); initApp(); return;
-  }
   const email = (document.getElementById('email-conn')?.value || '').trim().toLowerCase();
   const mdp = document.getElementById('mdp-conn')?.value || '';
   if (!email || !mdp) {
     return toast('Saisissez votre e-mail et votre mot de passe.', 'erreur');
   }
+
+  // Mode navigateur (pas de backend)
+  if (!MODE.api) {
+    const compte = Comptes.verifier(email, mdp);
+    if (!compte) return toast('Identifiants incorrects.', 'erreur');
+    Comptes.ouvrirSession(compte.id);
+    SESSION.utilisateur = compteVersProfil(compte);
+    appliquerUtilisateur(SESSION.utilisateur);
+    toast('Connexion réussie. Bienvenue !');
+    afficherVue('vue-app'); initApp();
+    return;
+  }
+
+  // Mode serveur
   try {
     await API.post('/auth/connexion', { email, mot_de_passe: mdp });
     MODE.utilisateur = await API.get('/profil/moi');
@@ -267,7 +277,8 @@ async function demanderReinitialisation() {
     return toast('Adresse e-mail invalide.', 'erreur');
   }
   if (!MODE.api) {
-    toast('Serveur indisponible.', 'erreur');
+    // Mode navigateur : on confirme sans révéler l'existence du compte
+    toast('Si cet e-mail correspond à un compte, un lien de réinitialisation a été envoyé.');
     afficherVue('vue-connexion'); return;
   }
   try {
@@ -321,84 +332,87 @@ function commencerOnboarding() {
   afficherVue('vue-onboarding');
 }
 async function naviguerEtape(delta) {
+  // Validation des champs OBLIGATOIRES avant d'avancer
+  if (delta > 0 && !validerEtapeOnboarding(etat.etapeOnboarding)) return;
+
   const nouv = etat.etapeOnboarding + delta;
   if (nouv < 1) return;
   if (nouv > 4) {
-    // Dernière étape : créer réellement le compte si backend dispo
-    if (MODE.api) {
-      const ok = await finaliserInscriptionReelle();
-      if (!ok) return;   // on reste sur l'étape pour permettre la correction
-    } else {
-      etat.utilisateur.role = etat.roleChoisi;
-      toast('Serveur indisponible.');
-    }
+    const ok = await finaliserInscription();
+    if (!ok) return;   // on reste sur l'étape pour corriger
     afficherVue('vue-app'); initApp(); return;
   }
   etat.etapeOnboarding = nouv;
   majEtapeOnboarding();
 }
 
-/* Appelle réellement /api/auth/inscription avec les données saisies
-   à l'inscription, puis met à jour le profil avec les secteurs et la
-   photo choisis pendant l'onboarding. */
-async function finaliserInscriptionReelle() {
+/* Vérifie que les informations obligatoires d'une étape sont remplies. */
+function validerEtapeOnboarding(etape) {
+  if (etape === 1) {
+    const pays = document.querySelector('#etape-1 select')?.value;
+    const etudes = (document.querySelector('#etape-1 input')?.value || '').trim();
+    if (!pays) { toast('Le pays est obligatoire.', 'erreur'); return false; }
+    if (!etudes) { toast('Le niveau d\'études / la profession est obligatoire.', 'erreur'); return false; }
+  }
+  if (etape === 2) {
+    const n = document.querySelectorAll('#etape-2 .chip-select.actif').length;
+    if (n < 2) { toast('Choisissez au moins 2 secteurs d\'intérêt.', 'erreur'); return false; }
+  }
+  return true;
+}
+
+/* Crée le compte (serveur OU navigateur) avec toutes les infos de
+   l'inscription et de l'onboarding. */
+async function finaliserInscription() {
   const prenom = (document.getElementById('prenom-ins')?.value || '').trim();
   const nom = (document.getElementById('nom-ins')?.value || '').trim();
   const email = (document.getElementById('email-ins')?.value || '').trim().toLowerCase();
   const mdp = document.getElementById('mdp-ins')?.value || '';
-  const mdp2 = document.getElementById('mdp2-ins')?.value || '';
 
-  if (!prenom || !nom) {
-    toast('Prénom et nom obligatoires.', 'erreur');
-    afficherVue('vue-inscription'); return false;
-  }
-  if (!email.includes('@')) {
-    toast('Adresse e-mail invalide.', 'erreur');
-    afficherVue('vue-inscription'); return false;
-  }
-  if (mdp.length < 8) {
-    toast('Mot de passe : 8 caractères minimum, mélange lettres+chiffres.', 'erreur');
-    afficherVue('vue-inscription'); return false;
-  }
-  if (mdp !== mdp2) {
-    toast('Les deux mots de passe ne correspondent pas.', 'erreur');
-    afficherVue('vue-inscription'); return false;
+  // Données collectées pendant l'onboarding
+  const secteurs = [...document.querySelectorAll('#etape-2 .chip-select.actif')]
+    .map(c => c.textContent.trim());
+  const pays = document.querySelector('#etape-1 select')?.value || '';
+  const etudes = (document.querySelector('#etape-1 input')?.value || '').trim();
+  const bio = (document.querySelector('#etape-1 textarea')?.value || '').trim();
+
+  // ----- Mode navigateur -----
+  if (!MODE.api) {
+    try {
+      const compte = Comptes.creer({
+        prenom, nom, email, mot_de_passe: mdp,
+        role: etat.roleChoisi || 'etudiant',
+        pays, etudes, bio, secteurs,
+      });
+      Comptes.ouvrirSession(compte.id);
+      SESSION.utilisateur = compteVersProfil(compte);
+      appliquerUtilisateur(SESSION.utilisateur);
+      toast('Inscription terminée. Bienvenue sur LaSource !');
+      return true;
+    } catch (err) {
+      toast(err.message || 'Inscription impossible.', 'erreur');
+      afficherVue('vue-inscription'); return false;
+    }
   }
 
+  // ----- Mode serveur -----
   try {
     await API.post('/auth/inscription', {
-      prenom, nom, email,
-      mot_de_passe: mdp,
+      prenom, nom, email, mot_de_passe: mdp,
       role: etat.roleChoisi || 'etudiant',
     });
+    MODE.utilisateur = await API.get('/profil/moi');
+    if (pays || etudes || bio) {
+      await API.put('/profil/moi', { bio, etudes }).catch(() => {});
+      MODE.utilisateur = await API.get('/profil/moi');
+    }
+    appliquerUtilisateur(MODE.utilisateur);
+    toast('Inscription terminée. Bienvenue sur LaSource !');
+    return true;
   } catch (err) {
     toast(err.message || 'Inscription impossible.', 'erreur');
     afficherVue('vue-inscription'); return false;
   }
-
-  // Charger le profil créé pour récupérer l'id
-  try { MODE.utilisateur = await API.get('/profil/moi'); }
-  catch { MODE.utilisateur = null; }
-
-  // Étape 2 d'onboarding : secteurs sélectionnés (chips actifs)
-  const secteursChoisis = [...document.querySelectorAll('#etape-2 .chip-select.actif')]
-    .map(c => c.textContent.trim());
-
-  // Étape 1 d'onboarding : pays + études + présentation
-  const pays = document.querySelector('#etape-1 select')?.value || null;
-  const etudes = document.querySelector('#etape-1 input')?.value?.trim() || null;
-  const bio = document.querySelector('#etape-1 textarea')?.value?.trim() || null;
-
-  try {
-    if (pays || etudes || bio || secteursChoisis.length) {
-      // Met à jour ce qui est mappable côté serveur (pas tout est branché)
-      await API.put('/profil/moi', { bio, etudes }).catch(() => {});
-    }
-  } catch (_) { /* tolère un échec sur les champs optionnels */ }
-
-  if (MODE.utilisateur) appliquerUtilisateur(MODE.utilisateur);
-  toast('Inscription terminée. Bienvenue sur LaSource !');
-  return true;
 }
 function majEtapeOnboarding() {
   const e = etat.etapeOnboarding;
@@ -431,6 +445,8 @@ async function seDeconnecter() {
   document.getElementById('menuProfil').classList.remove('ouvert');
   if (MODE.api) {
     try { await API.post('/auth/deconnexion', {}); } catch (_) { /* on déconnecte quand même côté UI */ }
+  } else {
+    Comptes.fermerSession();
   }
   MODE.utilisateur = null;
   toast('Vous avez été déconnecté(e).');
@@ -619,7 +635,7 @@ function carteQuestionHTML(q) {
       <p class="q-corps">${echapper(q.corps)}</p>
       <div class="q-tags"><span class="tag">${echapper(q.secteur)}</span></div>
       <div class="q-pied">
-        <button class="btn-utile${utileActif}" onclick="basculerUtileQ(${q.id})" aria-label="Marquer comme utile">${iconePouce()}<span class="cnt">${q.utile}</span><span class="lbl">${etat.utilesQ.has(q.id) ? 'Aimé' : 'Utile'}</span></button>
+        <button class="btn-utile${utileActif}" onclick="basculerUtileQ(${q.id})" aria-label="Ajouter aux favoris">${iconePouce()}<span class="cnt">${q.utile}</span><span class="lbl">${etat.utilesQ.has(q.id) ? 'En favori' : 'Favori'}</span></button>
         <button onclick="ouvrirQuestion(${q.id})">${ic('bulle','ic ic-s')} ${q.repCount} réponses</button>
         <button class="bouton-sauver${saveActif}" onclick="basculerSauver(${q.id})" title="Sauvegarder">${ic('marque','ic ic-s')} ${etat.sauvegardees.has(q.id) ? 'Sauvegardée' : 'Sauvegarder'}</button>
         <button class="repondre btn btn-secondaire btn-petit" onclick="ouvrirQuestion(${q.id})">Voir / Répondre</button>
@@ -645,7 +661,7 @@ async function basculerUtileQ(id) {
         if (r.marque) etat.utilesQ.add(id); else etat.utilesQ.delete(id);
         rendreCourant();
       }
-      toast(r?.marque ? 'Marqué comme utile.' : 'Marque retirée.');
+      toast(r?.marque ? 'Ajouté aux favoris.' : 'Retiré des favoris.');
     } catch (err) {
       // Rollback en cas d'échec serveur
       if (etaitMarque) { etat.utilesQ.add(id); q.utile++; }
@@ -654,7 +670,7 @@ async function basculerUtileQ(id) {
       toast(err.message || 'Action impossible.', 'erreur');
     }
   } else {
-    toast(etat.utilesQ.has(id) ? 'Marqué comme utile.' : 'Marque retirée.');
+    toast(etat.utilesQ.has(id) ? 'Ajouté aux favoris.' : 'Retiré des favoris.');
   }
 }
 
@@ -718,7 +734,7 @@ function ouvrirQuestion(id) {
       <p class="q-corps">${echapper(q.corps)}</p>
       <div class="q-tags"><span class="tag">${echapper(q.secteur)}</span></div>
       <div class="q-pied">
-        <button class="btn-utile${utileActif}" onclick="basculerUtileQ(${q.id})">${iconePouce()}<span class="cnt">${q.utile}</span><span class="lbl">${etat.utilesQ.has(q.id) ? 'Vous avez aimé' : 'Utile'}</span></button>
+        <button class="btn-utile${utileActif}" onclick="basculerUtileQ(${q.id})">${iconePouce()}<span class="cnt">${q.utile}</span><span class="lbl">${etat.utilesQ.has(q.id) ? 'En favori' : 'Favori'}</span></button>
         <button class="bouton-sauver${saveActif}" onclick="basculerSauver(${q.id})">${ic('marque','ic ic-s')} ${etat.sauvegardees.has(q.id) ? 'Sauvegardée' : 'Sauvegarder'}</button>
       </div>
       <div class="reponses" style="display:flex; flex-direction:column;">
@@ -748,7 +764,7 @@ function reponseHTML(r) {
       <div class="r-entete">${avatarHTML(r.init, 's')}<div class="info"><strong>${echapper(r.auteur)}</strong> ${badge}</div></div>
       <p>${echapper(r.contenu)}</p>
       <div class="actions">
-        <button class="btn-utile" onclick="utileR(this)">${iconePouce()}<span class="cnt">${r.utile}</span><span class="lbl">Utile</span></button>
+        <button class="btn-utile" onclick="utileR(this)">${iconePouce()}<span class="cnt">${r.utile}</span><span class="lbl">Favori</span></button>
         ${etoiles}
       </div>
       ${sous}
@@ -764,14 +780,14 @@ async function utileR(btn, idReponse) {
   if (MODE.api && idReponse) {
     try {
       await API.post(`/reponses/${idReponse}/utile`, {});
-      toast(actif ? 'Réponse marquée comme utile.' : 'Marque retirée.');
+      toast(actif ? 'Réponse ajoutée aux favoris.' : 'Retiré des favoris.');
     } catch (err) {
       btn.classList.toggle('actif');
       cnt.textContent = n;
       toast(err.message || 'Action impossible.', 'erreur');
     }
   } else {
-    toast(actif ? 'Réponse marquée comme utile.' : 'Marque retirée.');
+    toast(actif ? 'Réponse ajoutée aux favoris.' : 'Retiré des favoris.');
   }
 }
 function noter(elem, n) {
@@ -1414,11 +1430,28 @@ async function changerPanAdmin(elem, p) {
   }
 }
 async function adminDashboard() {
+  // Mode navigateur : indicateurs calculés depuis le stockage local
   if (!MODE.api) {
-    return `<div class="carte"><p style="color:var(--texte-doux);">
-      Tableau de bord indisponible : le backend n'est pas connecté.</p></div>`;
+    const comptes = Comptes.tous();
+    const d = {
+      utilisateurs: comptes.length,
+      etudiants: comptes.filter(c => c.role === 'etudiant').length,
+      mentors: comptes.filter(c => c.role === 'mentor').length,
+      admins: comptes.filter(c => c.role === 'admin' || c.estAdmin).length,
+      questions: (typeof questions !== 'undefined' ? questions.length : 0),
+      reponses: (typeof questions !== 'undefined'
+        ? questions.reduce((n, q) => n + (q.reponses ? q.reponses.length : 0), 0) : 0),
+      signalements_ouverts: 0,
+      mentors_a_verifier: comptes.filter(c => c.role === 'mentor' && !c.verifie).length,
+      comptes_suspendus: 0,
+    };
+    return _rendreDashboardAdmin(d);
   }
   const d = await API.get('/admin/dashboard');
+  return _rendreDashboardAdmin(d);
+}
+
+function _rendreDashboardAdmin(d) {
   const kpis = [
     ['groupe',  'Total inscrits',   d.utilisateurs],
     ['profil',  'Étudiants',        d.etudiants],
@@ -1444,8 +1477,15 @@ async function adminDashboard() {
     </div>`;
 }
 async function adminUsers() {
-  if (!MODE.api) return `<p>Backend indisponible.</p>`;
-  const liste = await API.get('/admin/utilisateurs?limite=200');
+  let liste;
+  if (!MODE.api) {
+    liste = Comptes.tous().map(c => ({
+      id_utilisateur: c.id, prenom: c.prenom, nom: c.nom, email: c.email,
+      role: c.role, est_actif: c.est_actif === false ? 0 : 1,
+    }));
+  } else {
+    liste = await API.get('/admin/utilisateurs?limite=200');
+  }
   return `<h2 style="margin-bottom:18px;">Gestion des utilisateurs (${liste.length})</h2>
     <table class="tableau">
       <thead><tr><th>Nom</th><th>E-mail</th><th>Rôle</th><th>Statut</th><th>Actions</th></tr></thead>
@@ -1493,7 +1533,7 @@ async function adminChangerRole(idUser, roleActuel) {
   } catch (err) { toast(err.message, 'erreur'); }
 }
 async function adminMentors() {
-  if (!MODE.api) return `<p>Backend indisponible.</p>`;
+  if (!MODE.api) return `<div class="carte"><p style="color:var(--texte-doux);">Ce module est disponible lorsque le serveur LaSource est connecté.</p></div>`;
   const att = await API.get('/admin/mentors-a-verifier');
   if (!att.length) {
     return `<h2 style="margin-bottom:18px;">Validation des mentors</h2>
@@ -1528,7 +1568,7 @@ async function adminMentorAction(action, idMentor) {
   } catch (err) { toast(err.message, 'erreur'); }
 }
 async function adminSignalements() {
-  if (!MODE.api) return `<p>Backend indisponible.</p>`;
+  if (!MODE.api) return `<div class="carte"><p style="color:var(--texte-doux);">Ce module est disponible lorsque le serveur LaSource est connecté.</p></div>`;
   const liste = await API.get('/admin/signalements?statut=ouvert');
   if (!liste.length) {
     return `<h2 style="margin-bottom:18px;">Signalements</h2>
@@ -1560,7 +1600,7 @@ async function adminSignalementAction(idSig, decision) {
   } catch (err) { toast(err.message, 'erreur'); }
 }
 async function adminCategories() {
-  if (!MODE.api) return `<p>Backend indisponible.</p>`;
+  if (!MODE.api) return `<div class="carte"><p style="color:var(--texte-doux);">Ce module est disponible lorsque le serveur LaSource est connecté.</p></div>`;
   const liste = await API.get('/admin/secteurs');
   return `<h2 style="margin-bottom:18px;">Catégories (${liste.length})</h2>
     <div class="carte">
@@ -1596,7 +1636,7 @@ async function ajouterCat() {
 }
 
 async function adminAudit() {
-  if (!MODE.api) return `<p>Backend indisponible.</p>`;
+  if (!MODE.api) return `<div class="carte"><p style="color:var(--texte-doux);">Ce module est disponible lorsque le serveur LaSource est connecté.</p></div>`;
   const liste = await API.get('/admin/audit?limite=50');
   if (!liste.length) {
     return `<h2 style="margin-bottom:18px;">Journal d'audit</h2>
@@ -1644,12 +1684,16 @@ document.addEventListener('click', (e) => {
    DÉMARRAGE
    ============================================================ */
 window.addEventListener('DOMContentLoaded', async () => {
-  // Charge la session courante depuis l'API (cookie HttpOnly)
+  // Bannière cookies (affichée tant qu'aucun choix n'a été fait)
+  initialiserCookies();
+
+  // Détecte le backend et charge la session courante
   await initialiserApi();
 
   // Charge la configuration OAuth publique (Client ID Google + flag LinkedIn)
   try {
-    const cfg = await API.get('/auth/config');
+    const cfg = MODE.api ? await API.get('/auth/config')
+                         : { google_client_id: '', linkedin_configure: false };
     window.GOOGLE_CLIENT_ID = cfg.google_client_id || null;
     window.LINKEDIN_CONFIGURE = !!cfg.linkedin_configure;
     // Masquer les boutons sociaux si non configurés (UX honnête)
@@ -1663,10 +1707,24 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
   } catch (_) { /* tolérance */ }
 
-  // Si déjà connecté (cookie valide), basculer directement dans l'app
+  // Si déjà connecté, basculer directement dans l'app
   if (MODE.utilisateur) {
     appliquerUtilisateur(MODE.utilisateur);
     afficherVue('vue-app');
     initApp();
   }
 });
+
+/* ----- Consentement cookies ----- */
+function initialiserCookies() {
+  const choix = localStorage.getItem('lasource_cookies');
+  const banniere = document.getElementById('cookieBanniere');
+  if (!banniere) return;
+  if (choix) banniere.classList.add('cache');
+  else banniere.classList.remove('cache');
+}
+function repondreCookies(accepte) {
+  localStorage.setItem('lasource_cookies', accepte ? 'accepte' : 'refuse');
+  document.getElementById('cookieBanniere')?.classList.add('cache');
+  toast(accepte ? 'Préférences enregistrées. Merci !' : 'Seuls les cookies essentiels seront utilisés.');
+}

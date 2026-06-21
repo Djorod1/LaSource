@@ -1117,3 +1117,25 @@ img, svg, video { max-width: 100%; height: auto; }
 }
 .marque-texte .lettre-rouge { color: var(--rouge); }
 
+
+/* ============================================================
+   BANDEAU CONSENTEMENT COOKIES
+   ============================================================ */
+.cookie-banniere {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000;
+  background: var(--surface);
+  border-top: 1px solid var(--bordure);
+  box-shadow: 0 -4px 20px rgba(15,23,42,.08);
+  padding: 16px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 20px; flex-wrap: wrap;
+}
+.cookie-banniere.cache { display: none; }
+.cookie-texte { flex: 1; min-width: 260px; }
+.cookie-texte strong { font-size: 14px; color: var(--texte); }
+.cookie-texte p { font-size: 13px; color: var(--texte-doux); margin-top: 4px; max-width: 640px; }
+.cookie-actions { display: flex; gap: 10px; flex-shrink: 0; }
+@media (max-width: 600px) {
+  .cookie-banniere { flex-direction: column; align-items: stretch; }
+  .cookie-actions { justify-content: flex-end; }
+}

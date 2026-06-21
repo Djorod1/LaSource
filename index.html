@@ -15,6 +15,21 @@
 <body>
 
 <!-- ============================================================
+     BANDEAU CONSENTEMENT COOKIES
+     ============================================================ -->
+<div class="cookie-banniere" id="cookieBanniere" role="dialog" aria-label="Consentement aux cookies">
+  <div class="cookie-texte">
+    <strong>Respect de votre vie privée</strong>
+    <p>LaSource utilise uniquement des cookies nécessaires à votre connexion
+       et à votre confort de navigation. Aucune publicité, aucun traçage tiers.</p>
+  </div>
+  <div class="cookie-actions">
+    <button class="btn btn-secondaire btn-petit" onclick="repondreCookies(false)">Refuser</button>
+    <button class="btn btn-primaire btn-petit" onclick="repondreCookies(true)">Accepter</button>
+  </div>
+</div>
+
+<!-- ============================================================
      ZONE DES TOASTS (notifications de confirmation)
      ============================================================ -->
 <div class="toasts" id="zoneToasts"></div>

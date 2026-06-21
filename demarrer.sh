@@ -1,23 +1,20 @@
 #!/usr/bin/env bash
 # =====================================================================
-# LaSource — Script de démarrage en une commande
+# LaSource — Script de démarrage
 #
-# Utilisation :
-#   ./demarrer.sh            -> démarre tout (DB + backend)
-#   ./demarrer.sh installer  -> installe les dépendances Python
-#   ./demarrer.sh charger-db -> recharge le schéma + le seed
-#   ./demarrer.sh aide       -> affiche l'aide
+# Par défaut : SQLite local, zéro installation serveur requise.
+# La base est créée et peuplée automatiquement au premier lancement.
 #
-# Prérequis :
-#   - Python 3.10+
-#   - MySQL 8 (ou MariaDB 10.5+) accessible en local
-#   - Avoir copié backend/.env.example en backend/.env et renseigné
-#     DB_PASSWORD
+# Sous-commandes :
+#   ./demarrer.sh             Démarre le serveur (SQLite par défaut)
+#   ./demarrer.sh installer   Crée le venv + installe les dépendances Python
+#   ./demarrer.sh reset       Supprime la base SQLite et la recharge
+#   ./demarrer.sh mysql       Démarre en mode MySQL (DB_TYPE=mysql)
+#   ./demarrer.sh aide        Affiche cette aide
 # =====================================================================
 
 set -euo pipefail
 
-# ----- Couleurs (sans dépendre de tput) -----
 VERT='\033[0;32m'; ROUGE='\033[0;31m'; JAUNE='\033[0;33m'; FIN='\033[0m'
 ok()   { echo -e "${VERT}✓${FIN} $*"; }
 err()  { echo -e "${ROUGE}✗${FIN} $*" >&2; }
@@ -25,40 +22,42 @@ info() { echo -e "${JAUNE}→${FIN} $*"; }
 
 DOSSIER="$(cd "$(dirname "$0")" && pwd)"
 cd "$DOSSIER"
-
 VENV="$DOSSIER/.venv"
-ENV_FILE="$DOSSIER/backend/.env"
+DB_FICHIER="$DOSSIER/lasource.db"
 
-# ----- Sous-commande : aide -----
 afficher_aide() {
   cat <<'AIDE'
-LaSource — démarrage en une commande
+LaSource — démarrage en quelques secondes
 
-Sous-commandes :
-  ./demarrer.sh            Démarre la base + le backend Flask
-  ./demarrer.sh installer  Crée le venv et installe les dépendances Python
-  ./demarrer.sh charger-db Recharge le schéma + données de démonstration
-  ./demarrer.sh aide       Affiche cette aide
+  ./demarrer.sh installer   (1 fois) crée le venv + installe Flask, etc.
+  ./demarrer.sh             démarre le serveur sur http://localhost:5000
+  ./demarrer.sh reset       supprime la base et la recrée (perte des données)
+  ./demarrer.sh mysql       mode MySQL (nécessite serveur MySQL + .env configuré)
+  ./demarrer.sh aide        affiche cette aide
 
-Au premier lancement, exécutez DANS L'ORDRE :
-  1.  cp backend/.env.example backend/.env
-      (puis éditez backend/.env pour renseigner DB_PASSWORD)
-  2.  ./demarrer.sh installer
-  3.  ./demarrer.sh charger-db
-  4.  ./demarrer.sh
+Premier lancement (3 commandes suffisent) :
+  1. ./demarrer.sh installer
+  2. ./demarrer.sh
+  3. Ouvrez http://localhost:5000
 
-Une fois démarré, ouvrez :
-  http://localhost:5000   (frontend + API)
-  Compte démo : demo@lasource.io / Source2026!
+Comptes prêts à l'emploi (mot de passe = Source2026!) :
+  demo@lasource.io                  étudiant — visite guidée
+  admin@lasource.io                 administrateur
+  c.assogba@upmc.fr                 mentor vérifié (tech)
+  o.dossou@invest-coach.com         mentor (éducation financière)
+  fadel.agbo@etu.uac.bj             étudiant lambda
 AIDE
 }
 
-# ----- Sous-commande : installer -----
 installer() {
+  if ! command -v python3 >/dev/null; then
+    err "python3 introuvable. Installez Python 3.10+."
+    exit 1
+  fi
   info "Création de l'environnement virtuel Python..."
   if [ ! -d "$VENV" ]; then
     python3 -m venv "$VENV"
-    ok "venv créé dans $VENV"
+    ok "venv créé"
   else
     info "venv déjà présent"
   fi
@@ -66,72 +65,70 @@ installer() {
   "$VENV/bin/pip" install --quiet --upgrade pip
   "$VENV/bin/pip" install --quiet -r backend/requirements.txt
   ok "Dépendances installées"
-}
-
-# ----- Sous-commande : charger-db -----
-charger_db() {
-  if [ ! -f "$ENV_FILE" ]; then
-    err "Fichier $ENV_FILE introuvable."
-    err "Copiez d'abord : cp backend/.env.example backend/.env"
-    exit 1
-  fi
-  set -a; . "$ENV_FILE"; set +a
-  DB_HOST="${DB_HOST:-localhost}"
-  DB_USER="${DB_USER:-root}"
-  DB_PASSWORD="${DB_PASSWORD:-}"
-
-  info "Chargement de schema.sql (création des tables)..."
-  mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" < database/schema.sql
-  ok "Schéma chargé"
-
-  info "Application de migration_v2.sql (rôle super_admin, audit, mdp reset)..."
-  mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" < database/migration_v2.sql
-  ok "Migration v2 appliquée"
-
-  info "Chargement des données de démonstration (10 mentors, 30 questions, etc.)..."
-  mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" < database/seed.sql
-  ok "Données chargées"
-
   echo
-  echo "Comptes prêts :"
-  echo "  • demo@lasource.io     / Source2026!  (étudiant — visite guidée)"
-  echo "  • admin@lasource.io    / Source2026!  (administrateur)"
-  echo "  • c.assogba@upmc.fr    / Source2026!  (mentor vérifié)"
-  echo "  • o.dossou@invest-coach.com / Source2026!  (mentor éducation financière)"
+  echo "Tout est prêt. Lancez maintenant : ./demarrer.sh"
 }
 
-# ----- Sous-commande : démarrer (par défaut) -----
-demarrer() {
+reset_sqlite() {
+  if [ -f "$DB_FICHIER" ]; then
+    info "Suppression de la base : $DB_FICHIER"
+    rm -f "$DB_FICHIER"
+    ok "Base supprimée — sera recréée au prochain démarrage"
+  else
+    info "Aucune base à supprimer."
+  fi
+}
+
+demarrer_sqlite() {
   if [ ! -d "$VENV" ]; then
-    err "venv manquant. Exécutez d'abord : ./demarrer.sh installer"
+    err "venv manquant. Lancez d'abord : ./demarrer.sh installer"
     exit 1
   fi
-  if [ ! -f "$ENV_FILE" ]; then
-    err "Fichier $ENV_FILE manquant. Copiez backend/.env.example en backend/.env"
-    exit 1
+
+  # Copie automatique du .env.example si .env absent (config par défaut OK)
+  if [ ! -f "backend/.env" ]; then
+    info "Création de backend/.env (configuration par défaut SQLite)..."
+    cp backend/.env.example backend/.env
+    ok "backend/.env créé — la config par défaut SQLite est prête"
   fi
-  info "Démarrage du backend Flask sur http://localhost:5000..."
+
   echo
   echo "──────────────────────────────────────────────────────────"
-  echo " LaSource est en cours d'exécution."
-  echo " Ouvrez votre navigateur sur : http://localhost:5000"
-  echo " Compte démo : demo@lasource.io / Source2026!"
-  echo " Arrêter : Ctrl+C"
+  echo "  LaSource — serveur en cours de démarrage"
+  echo "  → http://localhost:5000"
+  echo "  Base : SQLite ($DB_FICHIER)"
+  if [ ! -f "$DB_FICHIER" ]; then
+    echo "  La base sera créée et peuplée automatiquement au boot"
+  fi
+  echo
+  echo "  Compte démo : demo@lasource.io / Source2026!"
+  echo "  Compte admin : admin@lasource.io / Source2026!"
+  echo
+  echo "  Arrêter : Ctrl+C"
   echo "──────────────────────────────────────────────────────────"
   echo
   cd "$DOSSIER/backend"
+  export DB_TYPE=sqlite
   exec "$VENV/bin/python" app.py
 }
 
-# ----- Dispatch -----
+demarrer_mysql() {
+  if [ ! -f "backend/.env" ]; then
+    err "backend/.env manquant. Copiez backend/.env.example, mettez DB_TYPE=mysql et configurez DB_PASSWORD."
+    exit 1
+  fi
+  cd "$DOSSIER/backend"
+  export DB_TYPE=mysql
+  exec "$VENV/bin/python" app.py
+}
+
 case "${1:-demarrer}" in
-  installer)   installer ;;
-  charger-db|chargerdb|db) charger_db ;;
-  aide|--help|-h) afficher_aide ;;
-  demarrer|"") demarrer ;;
+  installer)       installer ;;
+  reset|reset-db)  reset_sqlite ;;
+  mysql)           demarrer_mysql ;;
+  aide|--help|-h)  afficher_aide ;;
+  demarrer|"")     demarrer_sqlite ;;
   *)
     err "Sous-commande inconnue : $1"
-    afficher_aide
-    exit 1
-    ;;
+    afficher_aide; exit 1 ;;
 esac

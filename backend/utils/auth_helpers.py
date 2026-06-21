@@ -55,7 +55,7 @@ def utilisateur_depuis_jeton(token):
              FROM session_web s
              JOIN utilisateur u ON u.id_utilisateur = s.id_utilisateur
             WHERE s.id_token = %s
-              AND s.expire_le > NOW()
+              AND s.expire_le > CURRENT_TIMESTAMP
               AND u.est_actif = 1""",
         (token,),
     )

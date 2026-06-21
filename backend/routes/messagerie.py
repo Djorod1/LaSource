@@ -73,7 +73,7 @@ def ouvrir():
         return jsonify({"id_conversation": existante["id_conversation"]})
 
     with curseur(commit=True) as cur:
-        cur.execute("INSERT INTO conversation () VALUES ()")
+        cur.execute("INSERT INTO conversation DEFAULT VALUES")
         id_conv = cur.lastrowid
         cur.executemany(
             """INSERT INTO conversation_participant
@@ -128,7 +128,7 @@ def envoyer(id_conv):
         )
         id_msg = cur.lastrowid
         cur.execute(
-            """UPDATE conversation SET dernier_msg_le = NOW()
+            """UPDATE conversation SET dernier_msg_le = CURRENT_TIMESTAMP
                 WHERE id_conversation = %s""",
             (id_conv,),
         )

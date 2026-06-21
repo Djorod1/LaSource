@@ -14,14 +14,6 @@
 </head>
 <body>
 
-<!-- Bandeau affiché uniquement quand le backend n'est pas joignable -->
-<div class="bandeau-demo cache" id="bandeauDemo" role="status" aria-live="polite">
-  <strong>Mode démo</strong> — le serveur n'est pas connecté.
-  Les données affichées sont fictives et rien ne sera sauvegardé.
-  <button class="btn-fermer-bandeau" onclick="document.getElementById('bandeauDemo').classList.add('cache')"
-          aria-label="Fermer">×</button>
-</div>
-
 <!-- ============================================================
      ZONE DES TOASTS (notifications de confirmation)
      ============================================================ -->
@@ -102,10 +94,13 @@
       <h1>Bienvenue</h1>
       <p class="sous-titre">Connectez-vous pour accéder à votre espace</p>
 
-      <div class="encadre-demo" id="encadre-compte-demo">
+      <div class="encadre-demo">
         <strong>Tester sans inscription</strong>
-        <p>Compte de démonstration : <code>demo@lasource.io</code> / <code>Source2026!</code></p>
-        <button class="btn btn-secondaire btn-petit" onclick="connecterCompteDemo()">Utiliser ce compte</button>
+        <p>Un compte de découverte est disponible :
+           <code>demo@lasource.io</code> / <code>Source2026!</code></p>
+        <button class="btn btn-secondaire btn-petit" onclick="connecterCompteDemo()">
+          Se connecter avec ce compte
+        </button>
       </div>
 
       <div class="champ">

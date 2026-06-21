@@ -1,15 +1,14 @@
 /* ============================================================
    LaSource — Client API (wrapper fetch)
-   Tous les appels HTTP au backend passent par cet objet API global.
-   - Cookies de session HttpOnly transmis automatiquement.
-   - JSON sérialisé/parsé automatiquement.
-   - Erreurs serveur (4xx/5xx) levées comme exceptions JS exploitables.
+   Tous les appels HTTP au backend passent par l'objet API global.
+   - Cookies de session HttpOnly transmis automatiquement
+   - JSON sérialisé/parsé automatiquement
+   - Erreurs serveur (4xx/5xx) levées comme exceptions JS exploitables
    ============================================================ */
 
 const API_BASE = '/api';
 
 const API = {
-  /** Appel HTTP générique. Lance une Error si la réponse n'est pas OK. */
   async _appel(methode, chemin, corps) {
     const opts = {
       method: methode,
@@ -25,7 +24,6 @@ const API = {
     try {
       reponse = await fetch(API_BASE + chemin, opts);
     } catch (err) {
-      // Réseau coupé, backend éteint, etc.
       throw new ApiErreur(0, 'Connexion au serveur impossible. Vérifiez votre réseau.');
     }
 
@@ -46,17 +44,8 @@ const API = {
   post(chemin, corps)  { return this._appel('POST',   chemin, corps); },
   put(chemin, corps)   { return this._appel('PUT',    chemin, corps); },
   delete(chemin)       { return this._appel('DELETE', chemin); },
-
-  /** Indique si le serveur backend est accessible. Utilisé au boot. */
-  async pingSante() {
-    try {
-      const r = await fetch(API_BASE + '/sante', { credentials: 'same-origin' });
-      return r.ok;
-    } catch { return false; }
-  },
 };
 
-/* Exception typée pour distinguer les erreurs API des autres erreurs JS. */
 class ApiErreur extends Error {
   constructor(statut, message, donnees) {
     super(message);
@@ -65,28 +54,31 @@ class ApiErreur extends Error {
   }
 }
 
-/* ------------------------------------------------------------
-   MODE — détecte automatiquement si le backend est joignable.
-   - Si oui : MODE.api = true, toutes les fonctions appellent le backend
-   - Si non : MODE.api = false, fallback sur les données de démo locales
-   Cela permet d'ouvrir index.html en local SANS backend pour démo,
-   tout en branchant le backend dès qu'il est lancé.
-   ------------------------------------------------------------ */
+/* Session courante (chargée au boot via /api/profil/moi).
+   null si pas encore connecté. */
+const SESSION = { utilisateur: null };
+
+async function initialiserSession() {
+  try {
+    SESSION.utilisateur = await API.get('/profil/moi');
+  } catch (err) {
+    SESSION.utilisateur = null;   // 401 = pas connecté, normal au démarrage
+  }
+  return SESSION;
+}
+
+/* Compatibilité avec l'ancienne API (mode démo retiré).
+   MODE.api est toujours true ; MODE.utilisateur est lié à SESSION. */
 const MODE = {
-  api: false,           // bascule à true après ping santé réussi
-  utilisateur: null,    // session courante chargée depuis /api/profil/moi
+  get api() { return true; },
+  set api(_) { /* no-op : il n'y a plus de mode démo */ },
+  get utilisateur() { return SESSION.utilisateur; },
+  set utilisateur(v) { SESSION.utilisateur = v; },
 };
 
-/* Initialisation : à appeler une fois au démarrage. */
+/* Alias pour conserver l'ancien nom d'init.
+   Toujours appelable, ne fait plus de fallback démo. */
 async function initialiserApi() {
-  MODE.api = await API.pingSante();
-  if (MODE.api) {
-    try {
-      MODE.utilisateur = await API.get('/profil/moi');
-    } catch (err) {
-      // 401 = non connecté, c'est normal au démarrage public
-      MODE.utilisateur = null;
-    }
-  }
+  await initialiserSession();
   return MODE;
 }

@@ -14,7 +14,7 @@ from flask import Flask, jsonify, send_from_directory
 from werkzeug.exceptions import HTTPException
 
 from config import Config
-from models.db import fermer_connexion
+from models.db import fermer_connexion, initialiser_si_necessaire
 from utils.securite import appliquer_entetes_securite
 
 from routes.auth          import bp_auth
@@ -58,6 +58,10 @@ def creer_application():
 
     app.teardown_appcontext(fermer_connexion)
     app.after_request(appliquer_entetes_securite)
+
+    # Auto-initialise la base SQLite au premier lancement (no-op en MySQL)
+    initialiser_si_necessaire(app)
+    logger.info("Base de données : %s", app.config.get("DB_TYPE"))
 
     # ---- Gestion globale des erreurs : jamais de pile en réponse client ----
 

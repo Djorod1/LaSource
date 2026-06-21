@@ -106,7 +106,7 @@ def connexion():
     reinitialiser(cle_throttle)   # connexion réussie : on efface le compteur
 
     executer(
-        "UPDATE utilisateur SET derniere_co = NOW() WHERE id_utilisateur = %s",
+        "UPDATE utilisateur SET derniere_co = CURRENT_TIMESTAMP WHERE id_utilisateur = %s",
         (user["id_utilisateur"],),
         commit=True,
     )
@@ -217,7 +217,7 @@ def reinitialiser_mdp():
             (hache, ligne["id_utilisateur"]),
         )
         cur.execute(
-            "UPDATE reinitialisation_mdp SET utilise_le = NOW() WHERE id_jeton = %s",
+            "UPDATE reinitialisation_mdp SET utilise_le = CURRENT_TIMESTAMP WHERE id_jeton = %s",
             (jeton,),
         )
         # Invalide toutes les autres sessions actives de l'utilisateur

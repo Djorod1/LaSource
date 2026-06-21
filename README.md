@@ -1,50 +1,99 @@
 # LaSource
 
-> Plateforme de mentorat pour la jeunesse. Une question, une réponse,
-> un acte de mentorat.
+> Plateforme de mentorat pour la jeunesse.
+> Une question, une réponse, un acte de mentorat.
 
 LaSource met en relation des étudiants en demande d'orientation
-(élèves du secondaire, étudiants du supérieur, jeunes en reconversion)
-avec des mentors expérimentés issus de différents secteurs.
+avec des mentors expérimentés. **Plus de mode démo** : tout est
+réel, persistant et prêt à être mis en ligne.
 
 ---
 
-## Démarrage rapide (en 1 commande)
+## Démarrage en 3 commandes
 
-**Prérequis** : Python 3.10+, MySQL 8 (ou MariaDB 10.5+) accessible en local.
+**Prérequis** : Python 3.10+. **Aucune installation MySQL nécessaire.**
 
 ```bash
-# 1. Configurer le mot de passe MySQL
-cp backend/.env.example backend/.env
-# (éditez backend/.env pour renseigner DB_PASSWORD)
-
-# 2. Installer les dépendances Python (une seule fois)
-./demarrer.sh installer
-
-# 3. Charger le schéma + données de démonstration (une seule fois)
-./demarrer.sh charger-db
-
-# 4. Démarrer le serveur
-./demarrer.sh
+./demarrer.sh installer   # 1 fois : crée le venv + installe Flask
+./demarrer.sh             # démarre le serveur sur http://localhost:5000
+# Ouvrez http://localhost:5000 dans votre navigateur
 ```
 
-Ouvrez `http://localhost:5000` dans votre navigateur. Sans configuration
-serveur, vous pouvez aussi ouvrir directement `index.html` : LaSource
-basculera automatiquement en **mode démo** (données fictives, rien n'est
-sauvegardé — bandeau d'alerte visible).
+Au tout premier lancement, **la base SQLite est créée automatiquement**
+avec 15 utilisateurs, 10 questions et 14 réponses prêtes à explorer.
+Aucun script à lancer manuellement.
 
-## Comptes de démonstration
+## Comptes prêts à l'emploi
 
-| Rôle | E-mail | Mot de passe |
+Tous avec le mot de passe **`Source2026!`** :
+
+| Rôle | E-mail |
+|---|---|
+| Étudiant (visite guidée) | `demo@lasource.io` |
+| Administrateur | `admin@lasource.io` |
+| Mentor vérifié (tech) | `c.assogba@upmc.fr` |
+| Mentor (éducation financière) | `o.dossou@invest-coach.com` |
+| Étudiant lambda | `fadel.agbo@etu.uac.bj` |
+
+Le bouton **« Tester en visite guidée »** sur la page d'accueil connecte
+directement le compte démo.
+
+---
+
+## Mise en ligne (production)
+
+Le projet est prêt pour être déployé.
+
+### Option A — SQLite (le plus simple)
+
+Conserve la configuration par défaut. Convient à un déploiement à
+charge modérée (centaines à quelques milliers d'utilisateurs).
+Recommandé pour un MVP en production.
+
+```bash
+# Sur le serveur
+git clone <votre-repo> lasource
+cd lasource
+./demarrer.sh installer
+
+# Lancement avec gunicorn (production)
+.venv/bin/pip install gunicorn
+cd backend
+DB_TYPE=sqlite gunicorn -w 4 -b 0.0.0.0:8000 'app:creer_application()'
+```
+
+Mettez un reverse proxy (nginx) devant pour le HTTPS.
+
+### Option B — MySQL (charge élevée / conformité brief IFRI)
+
+Pour des dizaines de milliers d'utilisateurs ou si votre cahier des
+charges exige un SGBD client-serveur.
+
+```bash
+# 1. Configurer
+cp backend/.env.example backend/.env
+# Éditez backend/.env :
+#   DB_TYPE=mysql
+#   DB_PASSWORD=<votre_mot_de_passe>
+
+# 2. Initialiser le schéma + seed (1 fois)
+mysql -u root -p < database/schema.sql
+mysql -u root -p < database/migration_v2.sql
+mysql -u root -p < database/seed.sql
+
+# 3. Démarrer
+./demarrer.sh mysql
+```
+
+### Variables d'environnement importantes
+
+| Variable | Défaut | Effet |
 |---|---|---|
-| Visite guidée (étudiant) | `demo@lasource.io` | `Source2026!` |
-| Administrateur | `admin@lasource.io` | `Source2026!` |
-| Mentor vérifié (tech) | `c.assogba@upmc.fr` | `Source2026!` |
-| Mentor (éducation financière) | `o.dossou@invest-coach.com` | `Source2026!` |
-| Étudiant | `fadel.agbo@etu.uac.bj` | `Source2026!` |
-
-Le bouton **« Tester en visite guidée »** sur la page d'accueil
-connecte automatiquement le compte étudiant `demo@lasource.io`.
+| `DB_TYPE` | `sqlite` | `sqlite` ou `mysql` |
+| `DB_PATH` | `./lasource.db` | Chemin du fichier SQLite |
+| `SECRET_KEY` | non sécurisé par défaut | **À changer en production** |
+| `FLASK_DEBUG` | `0` | `1` pour activer le debug (jamais en prod) |
+| `EMAIL_MODE` | `console` | `console` (log) ; SMTP à implémenter |
 
 ---
 
@@ -53,139 +102,93 @@ connecte automatiquement le compte étudiant `demo@lasource.io`.
 | Couche | Choix |
 |---|---|
 | Frontend | HTML / CSS / JavaScript (sans framework) |
-| Backend | Python 3.11 — Flask 3 |
-| Base | MySQL 8 |
+| Backend | Python 3.10+ — Flask 3 |
+| Base | **SQLite par défaut**, MySQL en option (`DB_TYPE=mysql`) |
 | Auth | Sessions côté serveur, mots de passe bcrypt (12 tours) |
 
-Pas de framework JS, pas d'ORM : SQL écrit à la main pour rester
-proche des compétences évaluées (algèbre relationnelle / SQL,
-conception de bases de données).
+SQL écrit à la main (pas d'ORM) pour rester proche des compétences
+évaluées (algèbre relationnelle / SQL, conception de bases).
 
-## Structure du dépôt
+## Structure
 
 ```
 .
-├── index.html              Application principale (SPA)
-├── script.js               Logique applicative
-├── api.js                  Wrapper d'appels au backend
-├── styles.css              Feuille de style
-├── reinitialiser.html      Page de réinitialisation de mot de passe
-├── demarrer.sh             Script de démarrage en une commande
-├── assets/                 Logo (placeholder à remplacer)
+├── index.html                Application principale (SPA)
+├── reinitialiser.html        Page de réinitialisation de mot de passe
+├── script.js                 Logique applicative
+├── api.js                    Wrapper d'appels au backend
+├── styles.css                Feuille de style
+├── demarrer.sh               Script de démarrage
+├── assets/                   Logo (placeholder à remplacer)
 │
-├── backend/                Serveur d'API Python / Flask
-│   ├── app.py              Point d'entrée + handler global d'erreur
-│   ├── config.py           Configuration (.env)
-│   ├── requirements.txt
+├── backend/                  Serveur Flask
+│   ├── app.py                Point d'entrée + handler global d'erreur
+│   ├── config.py             Configuration (.env)
+│   ├── requirements.txt      Flask, bcrypt, python-dotenv
 │   ├── .env.example
-│   ├── models/db.py        Connexion MySQL + helpers SQL
+│   ├── models/db.py          Connexion uniforme SQLite/MySQL
 │   ├── utils/
-│   │   ├── auth_helpers.py Bcrypt, sessions, décorateurs
-│   │   ├── securite.py     Politique mdp, anti-force-brute, en-têtes
-│   │   ├── email.py        Service e-mail (mode dev : log console)
-│   │   └── audit.py        Journalisation des actions admin
-│   ├── routes/             Blueprints HTTP (43 routes)
-│   │   ├── auth.py           connexion/inscription/déconnexion +
-│   │   │                     oubli-mdp + reinitialiser + changer-mdp
-│   │   ├── profil.py         Profil étudiant et mentor
-│   │   ├── questions.py      Publication, lecture, tri, marquages
-│   │   ├── reponses.py       Réponses
-│   │   ├── mentors.py        Annuaire + suivi
-│   │   ├── messagerie.py     Conversations privées
-│   │   ├── notifications.py  Liste, comptage, marquage
-│   │   ├── recherche.py      Recherche globale
-│   │   └── admin.py          Tableau de bord, CRUD utilisateurs,
-│   │                         CRUD secteurs, mentors à vérifier,
-│   │                         signalements, journal d'audit, rôles
+│   │   ├── auth_helpers.py     bcrypt, sessions, décorateurs
+│   │   ├── securite.py         politique mdp, anti-force-brute, en-têtes
+│   │   ├── email.py            service email (mode dev = log console)
+│   │   └── audit.py            journalisation actions admin
+│   ├── routes/               43 routes HTTP
+│   │   ├── auth.py             inscription, connexion, déconnexion,
+│   │   │                       oubli-mdp, reinitialiser-mdp, changer-mdp
+│   │   ├── profil.py           profil étudiant et mentor
+│   │   ├── questions.py        publier, lister, marquages
+│   │   ├── reponses.py         réponses
+│   │   ├── mentors.py          annuaire + suivi
+│   │   ├── messagerie.py       conversations privées
+│   │   ├── notifications.py    liste, marquage
+│   │   ├── recherche.py        recherche globale
+│   │   └── admin.py            tableau de bord, CRUD users/secteurs,
+│   │                           mentors à vérifier, signalements, audit
 │   └── services/
-│       └── suggestions.py    Algorithme de suggestion mentors
+│       └── suggestions.py      algorithme de suggestion mentors
 │
 └── database/
-    ├── schema.sql          Schéma complet MySQL (18 tables)
-    ├── migration_v2.sql    Rôle super_admin, audit, reinit mdp
-    └── seed.sql            10 mentors africains + 30 questions +
-                            réponses + sauvegardes + signalement démo
+    ├── schema_sqlite.sql       Schéma SQLite (chargé auto au 1er boot)
+    ├── seed_sqlite.sql         Données de démonstration SQLite
+    ├── schema.sql              Schéma MySQL (option production)
+    ├── migration_v2.sql        Migration v2 pour MySQL
+    └── seed.sql                Données de démo MySQL
 ```
-
-## Endpoints API
-
-Préfixe : `/api`
-
-| Préfixe | Routes |
-|---|---|
-| `/auth/*` | inscription, connexion, déconnexion, **oubli-mdp**, **reinitialiser-mdp**, **changer-mdp** |
-| `/profil/*` | moi, profil public, modifier, référentiels (secteurs+pays) |
-| `/questions/*` | publier, lister, détail, supprimer, utile, sauvegarder, signaler |
-| `/reponses/*` | publier, supprimer, marquer utile |
-| `/mentors/*` | lister, suivre, mes suivis |
-| `/messagerie/*` | conversations, messages, ouvrir |
-| `/notifications/*` | lister, comptage non-lues, tout-lu |
-| `/recherche` | globale (mentors + questions + secteurs) |
-| `/admin/*` | dashboard, **CRUD utilisateurs**, suspendre, réactiver, supprimer, changer-rôle, **CRUD secteurs**, mentors-a-verifier, vérifier, refuser, signalements, traiter, **journal d'audit** |
 
 ## Sécurité
 
 - Mots de passe hachés avec **bcrypt** (12 tours)
-- **Politique de robustesse** des mots de passe (longueur + mélange)
+- Politique de robustesse des mots de passe
 - **Anti-force-brute** : 5 échecs / 15 min → 429 pendant 15 min
-- **Réinitialisation de mot de passe** par jeton à durée limitée (1 h)
-- **Journal d'audit** des actions admin (qui, quoi, quand, depuis quelle IP)
+- **Réinitialisation de mot de passe** par jeton 1h
+- **Journal d'audit** des actions admin (qui, quoi, quand, IP)
 - En-têtes HTTP sécurisés (CSP, X-Frame-Options, nosniff…)
 - Handler global d'erreur **sans fuite de stack trace**
-- Échappement systématique de tout contenu utilisateur côté frontend
-- Sessions par jeton opaque (64 octets) en cookie `HttpOnly` + `SameSite=Lax`
+- Échappement systématique de tout contenu utilisateur
+- Sessions par jeton opaque (64 octets) en cookie HttpOnly + SameSite=Lax
 - SQL **100% paramétré** (zéro concaténation)
-- Mode `DEBUG` derrière la variable d'env `FLASK_DEBUG` (jamais actif par défaut)
+- `DEBUG` derrière `FLASK_DEBUG` env var (jamais actif par défaut)
+- **PRAGMA foreign_keys = ON** + **WAL mode** pour SQLite
 
-## Rôles disponibles
+## Rôles
 
 | Rôle | Capacités |
 |---|---|
-| `visiteur` | Consulter le fil public (lecture seule) |
+| `visiteur` | Consulter le fil public |
 | `etudiant` | + Publier questions, commenter, sauvegarder, suivre mentors |
 | `mentor` | + Répondre aux questions, statut de vérification |
-| `admin` | + Tableau de bord, modération, suspension, validation mentors |
+| `admin` | + Modération, suspension, validation mentors |
 | `super_admin` | + Création d'autres admins, journal d'audit complet |
-
-Le rôle `super_admin` est attribué manuellement en base (UPDATE direct
-sur `utilisateur.role`).
 
 ## Logo
 
-Le dossier `assets/` réserve la **zone d'affichage du logo** à des
-dimensions verrouillées. Déposez vos fichiers :
+Déposez `assets/lasource-logo.png` (logo complet) et
+`assets/lasource-flamme.png` (flamme seule). Un placeholder neutre
+s'affiche tant qu'ils sont absents. Mise à l'échelle
+proportionnelle garantie (`object-fit: contain`).
 
-- `assets/lasource-logo.png` — logo complet (200 × 260 ou ratio similaire)
-- `assets/lasource-flamme.png` — flamme seule (carré, pour favicon)
+## Documentation produit
 
-Sans ces fichiers, un placeholder neutre s'affiche automatiquement.
-Aucune autre modification de code n'est nécessaire — la mise à
-l'échelle est gérée par `object-fit: contain`, votre image ne sera
-jamais déformée.
-
-## Mode démo (sans backend)
-
-Si le backend n'est pas démarré, le frontend bascule automatiquement en
-mode démo :
-
-- Un **bandeau rouge** en haut de la page prévient explicitement
-- Les boutons fonctionnent visuellement avec des données fictives
-- **Rien n'est sauvegardé** (refresh = tout perdu)
-
-Pour une démo réelle, lancez `./demarrer.sh` (instructions ci-dessus).
-
-## État du produit et roadmap
-
-Voir :
-- `AUDIT.md` — audit technique complet (700 lignes, 7 missions)
-- `STRATEGIE.md` — vision produit et benchmark international
-- `PLAN_PRODUIT.md` — roadmap 4 sprints + fichiers à modifier
-
-## Documentation utilisateur
-
-Pour modifier votre profil, consulter vos sauvegardes ou changer votre
-mot de passe : connectez-vous, cliquez sur votre avatar en haut à
-droite, puis « Mon profil » ou « Paramètres ».
-
-Le panneau **Sécurité** dans les paramètres permet de changer son mot
-de passe (le mot de passe actuel est demandé pour confirmer).
+- `AUDIT.md` — audit technique complet (700 lignes)
+- `STRATEGIE.md` — vision et benchmark international
+- `PLAN_PRODUIT.md` — roadmap 4 sprints

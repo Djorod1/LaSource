@@ -1621,18 +1621,11 @@ document.addEventListener('click', (e) => {
    DÉMARRAGE
    ============================================================ */
 window.addEventListener('DOMContentLoaded', async () => {
-  // Détecte si le backend est joignable ; charge la session si oui
+  // Charge la session courante depuis l'API (cookie HttpOnly)
   await initialiserApi();
 
-  // Affiche le bandeau démo si le backend n'est pas joignable
-  const bandeau = document.getElementById('bandeauDemo');
-  if (bandeau) {
-    if (MODE.api) bandeau.classList.add('cache');
-    else          bandeau.classList.remove('cache');
-  }
-
   // Si déjà connecté (cookie valide), basculer directement dans l'app
-  if (MODE.api && MODE.utilisateur) {
+  if (MODE.utilisateur) {
     appliquerUtilisateur(MODE.utilisateur);
     afficherVue('vue-app');
     initApp();

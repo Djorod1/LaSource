@@ -105,10 +105,14 @@ const notifications = [
 ];
 
 /* ---------- Helpers avatar (photo ou initiales) ---------- */
-function avatarHTML(initiales, taille = '', photo = null) {
-  const cls = 'avatar' + (taille ? ' avatar-' + taille : '');
+function avatarHTML(initiales, taille = '', photo = null, mentorVerifie = false) {
+  const cls = 'avatar' + (taille ? ' avatar-' + taille : '') + (mentorVerifie ? ' mentor-verifie' : '');
   if (photo) return `<div class="${cls}"><img src="${photo}" class="photo-avatar" alt=""></div>`;
   return `<div class="${cls}">${initiales}</div>`;
+}
+/* Badge mentor vérifié (innovation : couleur vert du logo, lecture immédiate) */
+function badgeMentorVerifie() {
+  return `<span class="badge-mentor-verifie">${ic('check','ic ic-s')} Mentor vérifié</span>`;
 }
 function monAvatarHTML(taille = '') { return avatarHTML(etat.utilisateur.initiales, taille, etat.utilisateur.photo); }
 function estMentor() { return etat.utilisateur.role === 'mentor'; }
@@ -1012,26 +1016,31 @@ function ouvrirProfilMentor(id) {
 function rendreProfil() {
   if (profilCible) return rendreProfilMentor(profilCible);
   const u = etat.utilisateur;
-  document.getElementById('entete-profil').innerHTML = `
-    ${avatarHTML(u.initiales, 'xl', u.photo)}
+  const estMentorVerifie = estMentor() && u.verifie;
+  const entete = document.getElementById('entete-profil');
+  entete.innerHTML = `
+    ${avatarHTML(u.initiales, 'xl', u.photo, estMentorVerifie)}
     <div class="infos">
-      <h2>${echapper(u.prenom + ' ' + u.nom)}</h2>
+      <h2>${echapper(u.prenom + ' ' + u.nom)}
+        ${estMentorVerifie ? badgeMentorVerifie() : ''}
+      </h2>
       <div class="ligne-meta">
         <span class="badge-role">${estMentor() ? ic('trophee','ic ic-s') + ' Mentor' : ic('diplome','ic ic-s') + ' Étudiant'}</span>
-        <span>${ic('position','ic ic-s')} ${echapper(u.pays)}</span>
-        <span>${ic('ecole','ic ic-s')} ${echapper(u.etudes)}</span>
+        ${u.pays ? `<span>${ic('position','ic ic-s')} ${echapper(u.pays)}</span>` : ''}
+        ${u.etudes ? `<span>${ic('ecole','ic ic-s')} ${echapper(u.etudes)}</span>` : ''}
       </div>
-      <div style="display:flex; gap:6px; flex-wrap:wrap;">
+      <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
         ${u.secteurs.map(s => `<span class="tag">${echapper(s)}</span>`).join('')}
       </div>
       <div style="display:flex; gap:24px; margin-top:14px; font-size:14px;">
         <div><strong style="font-family:'DM Serif Display',serif; font-size:1.4rem; color:var(--primaire);">${u.questionsPosees}</strong> questions</div>
         <div><strong style="font-family:'DM Serif Display',serif; font-size:1.4rem; color:var(--primaire);">${u.mentorsSuivis}</strong> mentors suivis</div>
+        ${estMentor() ? `<div><strong style="font-family:'DM Serif Display',serif; font-size:1.4rem; color:var(--vert);">12</strong> réponses publiées</div>` : ''}
       </div>
     </div>
     <div class="actions">
-      <button class="btn btn-secondaire" onclick="televerserPhotoCompte()">${ic('appareil')} Changer la photo</button>
-      <button class="btn btn-secondaire" onclick="naviguerApp('parametres')">${ic('crayon')} Modifier le profil</button>
+      <button class="btn btn-secondaire" onclick="televerserPhotoCompte()">${ic('appareil')} Photo</button>
+      <button class="btn btn-secondaire" onclick="naviguerApp('parametres')">${ic('crayon')} Modifier</button>
     </div>`;
   document.getElementById('tabs-profil').innerHTML = `
     <div class="tab-profil actif" onclick="ongletProfil(this, 'questions')">Mes questions</div>
@@ -1065,9 +1074,9 @@ function rendreProfilMentor(m) {
   const dispoLabel = { disponible:'Disponible', occupe:'Occupé', absent:'Absent' }[m.dispo];
   const suivi = etat.suivis.has(m.id);
   document.getElementById('entete-profil').innerHTML = `
-    ${avatarHTML(m.initiales, 'xl')}
+    ${avatarHTML(m.initiales, 'xl', null, m.verifie)}
     <div class="infos">
-      <h2>${echapper(m.prenom + ' ' + m.nom)} ${m.verifie ? `<span class="badge-verifie">${ic('check','ic ic-s')} Vérifié</span>` : ''}</h2>
+      <h2>${echapper(m.prenom + ' ' + m.nom)} ${m.verifie ? badgeMentorVerifie() : ''}</h2>
       <div class="ligne-meta">
         <span class="badge-role badge-mentor">${ic('trophee','ic ic-s')} Mentor</span>
         <span>${ic('position','ic ic-s')} ${echapper(m.ville + ', ' + m.pays)}</span>
@@ -1077,7 +1086,7 @@ function rendreProfilMentor(m) {
       <div style="display:flex; gap:6px; flex-wrap:wrap;"><span class="tag tag-ambre">${echapper(m.secteur)}</span></div>
       <div style="display:flex; gap:24px; margin-top:14px; font-size:14px;">
         <div><strong style="font-family:'DM Serif Display',serif; font-size:1.4rem; color:var(--primaire);">${m.reponses}</strong> réponses</div>
-        <div><strong style="font-family:'DM Serif Display',serif; font-size:1.4rem; color:var(--accent);">${m.note} ★</strong> note moyenne</div>
+        <div><strong style="font-family:'DM Serif Display',serif; font-size:1.4rem; color:var(--vert);">${m.note} ★</strong> note moyenne</div>
         <div><strong style="font-family:'DM Serif Display',serif; font-size:1.4rem; color:var(--primaire);">${echapper(m.anciennete)}</strong> sur LaSource</div>
       </div>
     </div>

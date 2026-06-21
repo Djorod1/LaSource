@@ -6,7 +6,7 @@
 
 /* ---------- Variables de design ---------- */
 :root {
-  /* Couleurs officielles du logo */
+  /* Couleurs officielles du logo (conservées pour le branding) */
   --vert: #16A34A;
   --vert-fonce: #117A37;
   --vert-clair: #E3F4E8;
@@ -15,19 +15,21 @@
   --rouge-clair: #FBE6E6;
   --noir: #1A1A1A;
 
-  /* Alias sémantiques utilisés dans tout le code */
-  --primaire: var(--vert);
-  --primaire-fonce: var(--vert-fonce);
-  --primaire-clair: var(--vert-clair);
-  --accent: var(--rouge);
+  /* Palette UI sobre et professionnelle (LinkedIn-like).
+     Le vert est réservé aux mentors / badges « vérifié »,
+     le rouge aux actions importantes / dangers. */
+  --primaire: #1F3A5F;          /* Bleu nuit sobre */
+  --primaire-fonce: #15293F;
+  --primaire-clair: #E8EEF5;
+  --accent: var(--rouge);        /* Accents et CTA secondaires */
   --accent-clair: var(--rouge-clair);
 
   /* Neutres */
-  --fond: #F5F4F0;
+  --fond: #F4F2EE;
   --surface: #FFFFFF;
   --texte: var(--noir);
   --texte-doux: #5C5C5C;
-  --bordure: #E6E4DD;
+  --bordure: #E2DFD8;
   --orange: var(--rouge);
   --gris-sombre: var(--noir);
 
@@ -65,7 +67,7 @@ input, textarea, select {
 }
 input:focus, textarea:focus, select:focus {
   outline: none; border-color: var(--primaire);
-  box-shadow: 0 0 0 3px rgba(22,163,74,.15);
+  box-shadow: 0 0 0 3px rgba(31,58,95,.15);
 }
 textarea { resize: vertical; min-height: 100px; }
 label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--texte); }
@@ -153,7 +155,7 @@ label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; c
   padding: 40px 20px;
   background:
     radial-gradient(at top right, rgba(185,28,28,.08), transparent 50%),
-    radial-gradient(at bottom left, rgba(22,163,74,.10), transparent 50%),
+    radial-gradient(at bottom left, rgba(31,58,95,.10), transparent 50%),
     var(--fond);
 }
 .boite-auth {
@@ -186,7 +188,7 @@ label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; c
   min-height: 100vh;
   background:
     radial-gradient(at top right, rgba(185,28,28,.08), transparent 50%),
-    radial-gradient(at bottom left, rgba(22,163,74,.10), transparent 50%),
+    radial-gradient(at bottom left, rgba(31,58,95,.10), transparent 50%),
     var(--fond);
 }
 .hero-nav {
@@ -323,7 +325,7 @@ label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; c
   display: flex; gap: 12px; cursor: pointer;
 }
 .notif-item:hover { background: var(--fond); }
-.notif-item.non-lu { background: rgba(22,163,74,.04); }
+.notif-item.non-lu { background: rgba(31,58,95,.04); }
 .notif-icone {
   width: 36px; height: 36px; border-radius: 50%;
   background: var(--primaire-clair); display: flex; align-items: center; justify-content: center;
@@ -410,7 +412,7 @@ label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; c
   background: var(--fond); border-radius: var(--rayon-s); padding: 14px;
 }
 .reponse.mentor {
-  background: rgba(22,163,74,.04);
+  background: rgba(31,58,95,.04);
   border-left: 3px solid var(--primaire);
 }
 .reponse .r-entete { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
@@ -699,7 +701,7 @@ label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; c
   fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linejoin: round;
   transition: fill .25s ease, stroke .25s ease, transform .25s ease;
 }
-.btn-utile.actif { color: var(--vert); background: rgba(22,163,74,.08); }
+.btn-utile.actif { color: var(--vert); background: rgba(31,58,95,.08); }
 .btn-utile.actif .icone-pouce {
   fill: var(--vert); stroke: var(--vert);
   animation: pop-utile .35s cubic-bezier(.34,1.56,.64,1);
@@ -1138,4 +1140,108 @@ img, svg, video { max-width: 100%; height: auto; }
 @media (max-width: 600px) {
   .cookie-banniere { flex-direction: column; align-items: stretch; }
   .cookie-actions { justify-content: flex-end; }
+}
+
+/* ============================================================
+   PROFIL — style LinkedIn (bandeau de couverture + sections)
+   ============================================================ */
+.banniere {
+  height: 140px;
+  border-radius: var(--rayon-m) var(--rayon-m) 0 0;
+  background:
+    linear-gradient(135deg, var(--primaire) 0%, #2D5285 60%, var(--primaire-fonce) 100%);
+  position: relative;
+  margin-bottom: -40px;
+  box-shadow: var(--ombre-s);
+}
+.banniere::after {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(at 80% 20%, rgba(255,255,255,.12), transparent 40%),
+    radial-gradient(at 20% 80%, rgba(185,28,28,.10), transparent 50%);
+  border-radius: inherit;
+}
+
+.entete-profil {
+  background: var(--surface);
+  border: 1px solid var(--bordure);
+  border-radius: 0 0 var(--rayon-m) var(--rayon-m);
+  padding: 24px;
+  display: flex; gap: 20px; align-items: flex-start;
+  position: relative;
+}
+.entete-profil .avatar-xl {
+  border: 4px solid var(--surface);
+  margin-top: -36px;
+  box-shadow: var(--ombre-m);
+}
+.entete-profil .infos { flex: 1; min-width: 0; padding-top: 4px; }
+.entete-profil .infos h2 { font-size: 1.6rem; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
+.entete-profil .actions { display: flex; flex-direction: column; gap: 8px; }
+.entete-profil .ligne-meta {
+  display: flex; flex-wrap: wrap; gap: 14px;
+  color: var(--texte-doux); font-size: 14px; margin: 8px 0;
+}
+.entete-profil .ligne-meta > span { display: inline-flex; align-items: center; gap: 6px; }
+
+/* ============================================================
+   DISTINCTION MENTOR (innovation visuelle)
+   ------------------------------------------------------------
+   - Avatar entouré d'un anneau vert quand le mentor est vérifié
+   - Badge « Mentor vérifié » bien lisible, vert sur fond clair
+   - Aucun marquage spécial pour les étudiants (par défaut neutre)
+   - Aucun marquage public pour les admins (rôle technique)
+   ============================================================ */
+.avatar.mentor-verifie {
+  box-shadow: 0 0 0 3px var(--vert), 0 0 0 5px var(--surface);
+}
+.badge-mentor-verifie {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: var(--vert-clair); color: var(--vert-fonce);
+  border: 1px solid var(--vert);
+  padding: 3px 9px; border-radius: 999px;
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.badge-mentor-verifie svg { color: var(--vert); }
+
+/* Petite vignette « réponse de mentor vérifié » dans le fil */
+.reponse.mentor {
+  border-left: 3px solid var(--vert);
+  background: linear-gradient(90deg, rgba(22,163,74,.04), transparent 30%);
+}
+
+/* Onglet « Espace mentor » accessible depuis le menu profil */
+.menu-profil button.special-mentor {
+  color: var(--vert-fonce);
+  font-weight: 600;
+}
+.menu-profil button.special-mentor svg { color: var(--vert); }
+
+/* ============================================================
+   GRILLE DE SECTIONS DU PROFIL (À propos / Activité / Expériences)
+   ============================================================ */
+.profil-grille {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+.profil-section {
+  background: var(--surface);
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon-m);
+  padding: 18px;
+}
+.profil-section h3 {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px; font-weight: 600;
+  color: var(--texte); margin-bottom: 10px;
+  display: flex; align-items: center; gap: 8px;
+}
+.profil-section h3 svg { color: var(--primaire); }
+.profil-section .lien-action {
+  font-size: 13px; color: var(--primaire); cursor: pointer;
+  float: right; font-weight: 500;
 }

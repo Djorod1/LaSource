@@ -1116,3 +1116,52 @@ img, svg, video { max-width: 100%; height: auto; }
   line-height: 1;
 }
 .marque-texte .lettre-rouge { color: var(--rouge); }
+
+/* ============================================================
+   BANDEAU MODE DÉMO + ENCADRÉ COMPTE DÉMO
+   ============================================================ */
+
+.bandeau-demo {
+  background: linear-gradient(90deg, var(--rouge-clair), var(--accent-clair));
+  color: #6b1414;
+  padding: 10px 56px 10px 18px;
+  text-align: center;
+  font-size: 14px;
+  border-bottom: 1px solid var(--rouge);
+  position: relative;
+  z-index: 100;
+}
+.bandeau-demo.cache { display: none; }
+.bandeau-demo strong { color: var(--rouge-fonce); margin-right: 4px; }
+
+.btn-fermer-bandeau {
+  position: absolute; right: 14px; top: 50%;
+  transform: translateY(-50%);
+  background: transparent; border: none; cursor: pointer;
+  font-size: 22px; line-height: 1; color: #6b1414;
+  padding: 0 6px;
+}
+.btn-fermer-bandeau:hover { color: var(--rouge); }
+
+.encadre-demo {
+  background: var(--vert-clair);
+  border: 1px solid var(--vert);
+  border-radius: var(--rayon-s);
+  padding: 12px 14px;
+  margin-bottom: 18px;
+  font-size: 13px;
+}
+.encadre-demo strong { color: var(--vert-fonce); font-size: 14px; display: block; margin-bottom: 4px; }
+.encadre-demo p { margin: 4px 0 8px; color: var(--texte); }
+.encadre-demo code {
+  background: var(--surface); padding: 1px 6px; border-radius: 3px;
+  font-family: ui-monospace, monospace; font-size: 12px;
+  color: var(--vert-fonce);
+}
+
+.cta-aide {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--texte-doux);
+  font-style: italic;
+}

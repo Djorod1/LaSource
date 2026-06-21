@@ -217,6 +217,45 @@ async function seConnecter() {
   }
 }
 
+/* Visite guidée : connexion immédiate avec le compte de démonstration public. */
+async function connecterCompteDemo() {
+  if (!MODE.api) {
+    toast('Mode démo automatique activé. Bienvenue !');
+    afficherVue('vue-app'); initApp(); return;
+  }
+  try {
+    await API.post('/auth/connexion', {
+      email: 'demo@lasource.io',
+      mot_de_passe: 'Source2026!',
+    });
+    MODE.utilisateur = await API.get('/profil/moi');
+    appliquerUtilisateur(MODE.utilisateur);
+    toast('Visite guidée — compte de démonstration connecté.');
+    afficherVue('vue-app'); initApp();
+  } catch (err) {
+    toast('Compte démo indisponible. Vérifiez que le seed est chargé.', 'erreur');
+  }
+}
+
+/* Mot de passe oublié — demande réelle d'envoi de mail. */
+async function demanderReinitialisation() {
+  const email = (document.getElementById('email-oubli')?.value || '').trim().toLowerCase();
+  if (!email.includes('@')) {
+    return toast('Adresse e-mail invalide.', 'erreur');
+  }
+  if (!MODE.api) {
+    toast('Mode démo : aucune demande envoyée.', 'erreur');
+    afficherVue('vue-connexion'); return;
+  }
+  try {
+    await API.post('/auth/oubli-mdp', { email });
+    toast('Si cet e-mail correspond à un compte, vous recevrez un lien dans quelques minutes.');
+    afficherVue('vue-connexion');
+  } catch (err) {
+    toast(err.message || 'Demande impossible.', 'erreur');
+  }
+}
+
 /* Synchronise l'état UI avec l'utilisateur retourné par /api/profil/moi. */
 function appliquerUtilisateur(u) {
   if (!u) return;
@@ -238,7 +277,26 @@ function appliquerUtilisateur(u) {
     verifie: !!u.est_verifie,
   };
 }
-function commencerOnboarding() { etat.etapeOnboarding = 1; majEtapeOnboarding(); afficherVue('vue-onboarding'); }
+/* Validation des champs de l'inscription AVANT de passer à l'onboarding. */
+function commencerOnboarding() {
+  const prenom = (document.getElementById('prenom-ins')?.value || '').trim();
+  const nom = (document.getElementById('nom-ins')?.value || '').trim();
+  const email = (document.getElementById('email-ins')?.value || '').trim().toLowerCase();
+  const mdp = document.getElementById('mdp-ins')?.value || '';
+  const mdp2 = document.getElementById('mdp2-ins')?.value || '';
+
+  if (!prenom || !nom) return toast('Prénom et nom obligatoires.', 'erreur');
+  if (!email.includes('@') || email.length < 6) return toast('Adresse e-mail invalide.', 'erreur');
+  if (mdp.length < 8) return toast('Mot de passe : 8 caractères minimum.', 'erreur');
+  if (!/[a-zA-Z]/.test(mdp) || !/\d/.test(mdp)) {
+    return toast('Le mot de passe doit mélanger lettres et chiffres.', 'erreur');
+  }
+  if (mdp !== mdp2) return toast('Les deux mots de passe ne correspondent pas.', 'erreur');
+
+  etat.etapeOnboarding = 1;
+  majEtapeOnboarding();
+  afficherVue('vue-onboarding');
+}
 async function naviguerEtape(delta) {
   const nouv = etat.etapeOnboarding + delta;
   if (nouv < 1) return;
@@ -1314,120 +1372,224 @@ function panneauConfid() {
 /* ============================================================
    ADMINISTRATION
    ============================================================ */
-function changerPanAdmin(elem, p) {
+async function changerPanAdmin(elem, p) {
   if (!elem) return;
   document.querySelectorAll('.menu-admin button').forEach(b => b.classList.remove('actif'));
   elem.classList.add('actif');
   const c = document.getElementById('contenu-admin');
-  if (p === 'dashboard') c.innerHTML = adminDashboard();
-  if (p === 'users') c.innerHTML = adminUsers();
-  if (p === 'mentors') c.innerHTML = adminMentors();
-  if (p === 'signalements') c.innerHTML = adminSignalements();
-  if (p === 'categories') c.innerHTML = adminCategories();
+  c.innerHTML = '<p style="color:var(--texte-doux); padding:20px;">Chargement…</p>';
+  try {
+    if (p === 'dashboard')     c.innerHTML = await adminDashboard();
+    else if (p === 'users')    c.innerHTML = await adminUsers();
+    else if (p === 'mentors')  c.innerHTML = await adminMentors();
+    else if (p === 'signalements') c.innerHTML = await adminSignalements();
+    else if (p === 'categories')   c.innerHTML = await adminCategories();
+    else if (p === 'audit')        c.innerHTML = await adminAudit();
+  } catch (err) {
+    c.innerHTML = `<div class="carte"><p style="color:var(--rouge);">
+      Erreur de chargement : ${echapper(err.message || 'inconnue')}.</p></div>`;
+  }
 }
-function adminDashboard() {
-  const secteurs = [['Technologie', 78],['Finance', 65],['Médecine', 52],['Entrepreneuriat', 41],['Droit', 30]];
+async function adminDashboard() {
+  if (!MODE.api) {
+    return `<div class="carte"><p style="color:var(--texte-doux);">
+      Tableau de bord indisponible : le backend n'est pas connecté.</p></div>`;
+  }
+  const d = await API.get('/admin/dashboard');
   const kpis = [
-    ['groupe',    'Total inscrits',    '2 478', '+ 124 cette semaine'],
-    ['bulle',     'Questions postées', '1 832', '+ 56 cette semaine'],
-    ['tendance',  'Taux de réponse',   '87 %',  '+ 3 % vs mois dernier'],
-    ['trophee',   'Mentors actifs',    '382',   '+ 18 cette semaine'],
-  ];
-  const activites = [
-    ['check',     'Nouveau mentor validé : <strong>Karim B.</strong>'],
-    ['drapeau',   'Signalement résolu sur une réponse'],
-    ['profil',    '12 nouvelles inscriptions aujourd\'hui'],
-    ['etiquette', 'Catégorie ajoutée : « Cybersécurité »'],
+    ['groupe',  'Total inscrits',   d.utilisateurs],
+    ['profil',  'Étudiants',        d.etudiants],
+    ['trophee', 'Mentors',          d.mentors],
+    ['bouclier','Administrateurs',  d.admins],
+    ['bulle',   'Questions',        d.questions],
+    ['etincelle','Réponses',        d.reponses],
+    ['drapeau', 'Signalements ouverts', d.signalements_ouverts],
+    ['check',   'Mentors à vérifier',   d.mentors_a_verifier],
   ];
   return `<h2 style="margin-bottom:18px;">Tableau de bord</h2>
     <div class="kpi-grid">
-      ${kpis.map(([icone, label, valeur, evo]) => `
+      ${kpis.map(([icone, label, valeur]) => `
         <div class="kpi-carte">
           <div class="kpi-icone">${ic(icone)}</div>
           <div class="label">${label}</div>
           <div class="valeur">${valeur}</div>
-          <div class="evolution">${evo}</div>
         </div>`).join('')}
     </div>
-    <div style="display:grid; grid-template-columns: 2fr 1fr; gap:16px;">
-      <div class="carte"><div class="carte-titre">Top secteurs (cette semaine)</div>
-        ${secteurs.map(([s, v]) => `<div class="barre-graphique"><div class="label">${s}</div><div class="barre"><div class="remplir" style="width:${v}%; background:var(--primaire);"></div></div><div class="val">${v}%</div></div>`).join('')}
-      </div>
-      <div class="carte"><div class="carte-titre">Activités récentes</div>
-        <ul style="list-style:none;">
-          ${activites.map(([icone, texte], i) => `<li class="activite-item ${i < activites.length-1 ? 'avec-bordure' : ''}"><span class="activite-icone">${ic(icone,'ic ic-s')}</span><span>${texte}</span></li>`).join('')}
-        </ul>
-      </div>
+    <div class="carte" style="margin-top:16px;">
+      <div class="carte-titre">Comptes suspendus</div>
+      <p style="font-size:1.5rem; font-family:'DM Serif Display',serif;">${d.comptes_suspendus || 0}</p>
     </div>`;
 }
-function adminUsers() {
-  const users = [
-    ['Marie Dupont','marie@email.com','Étudiant','actif'],
-    ['Sophie Lambert','sophie@email.com','Mentor','actif'],
-    ['Karim Benali','karim@email.com','Mentor','actif'],
-    ['Hugo Dupont','hugo@email.com','Étudiant','suspendu'],
-    ['Léa Tremblay','lea@email.com','Étudiant','actif'],
-  ];
-  return `<h2 style="margin-bottom:18px;">Gestion des utilisateurs</h2>
-    <input style="max-width:340px; margin-bottom:14px;" placeholder=" Rechercher un utilisateur…" />
-    <table class="tableau"><thead><tr><th>Nom</th><th>E-mail</th><th>Rôle</th><th>Statut</th><th>Actions</th></tr></thead>
-    <tbody>${users.map(u => `<tr>
-      <td><strong>${u[0]}</strong></td><td>${u[1]}</td>
-      <td><span class="badge-role ${u[2]==='Mentor'?'badge-mentor':''}">${u[2]}</span></td>
-      <td><span class="tag ${u[3]==='actif'?'tag-vert':'tag-rose'}">${u[3]}</span></td>
-      <td>
-        <button class="btn btn-secondaire btn-petit" onclick="toast('Utilisateur suspendu.')">Suspendre</button>
-        <button class="btn btn-danger btn-petit" onclick="toast('Utilisateur supprimé.', 'erreur')">Supprimer</button>
-      </td></tr>`).join('')}</tbody></table>`;
+async function adminUsers() {
+  if (!MODE.api) return `<p>Backend indisponible.</p>`;
+  const liste = await API.get('/admin/utilisateurs?limite=200');
+  return `<h2 style="margin-bottom:18px;">Gestion des utilisateurs (${liste.length})</h2>
+    <table class="tableau">
+      <thead><tr><th>Nom</th><th>E-mail</th><th>Rôle</th><th>Statut</th><th>Actions</th></tr></thead>
+      <tbody>${liste.map(u => `<tr>
+        <td><strong>${echapper(u.prenom)} ${echapper(u.nom)}</strong></td>
+        <td>${echapper(u.email)}</td>
+        <td><span class="badge-role ${u.role==='mentor'?'badge-mentor':''}">${echapper(u.role)}</span></td>
+        <td><span class="tag ${u.est_actif?'tag-vert':'tag-rose'}">${u.est_actif?'actif':'suspendu'}</span></td>
+        <td>
+          ${u.est_actif
+            ? `<button class="btn btn-secondaire btn-petit" onclick="adminAction('suspendre',${u.id_utilisateur})">Suspendre</button>`
+            : `<button class="btn btn-secondaire btn-petit" onclick="adminAction('reactiver',${u.id_utilisateur})">Réactiver</button>`}
+          <button class="btn btn-fantome btn-petit" onclick="adminChangerRole(${u.id_utilisateur},'${u.role}')">Rôle</button>
+          <button class="btn btn-danger btn-petit" onclick="adminAction('supprimer',${u.id_utilisateur})">Supprimer</button>
+        </td></tr>`).join('')}</tbody>
+    </table>`;
 }
-function adminMentors() {
-  const att = mentors.filter(m => !m.verifie);
-  return `<h2 style="margin-bottom:18px;">Validation des mentors</h2>
+
+/* Action générique sur un utilisateur (suspendre / réactiver / supprimer). */
+async function adminAction(action, idUser) {
+  const verbes = {
+    suspendre: { url: 'POST', chemin: `/admin/utilisateurs/${idUser}/suspendre`, conf: 'Suspendre cet utilisateur ?' },
+    reactiver: { url: 'POST', chemin: `/admin/utilisateurs/${idUser}/reactiver`, conf: 'Réactiver cet utilisateur ?' },
+    supprimer: { url: 'DELETE', chemin: `/admin/utilisateurs/${idUser}`, conf: 'Supprimer définitivement ?' },
+  };
+  const v = verbes[action]; if (!v) return;
+  if (!confirm(v.conf)) return;
+  try {
+    await (v.url === 'DELETE' ? API.delete(v.chemin) : API.post(v.chemin, {}));
+    toast('Action réalisée.');
+    changerPanAdmin(document.querySelector('[data-adm=users]'), 'users');
+  } catch (err) { toast(err.message, 'erreur'); }
+}
+
+async function adminChangerRole(idUser, roleActuel) {
+  const choix = prompt(
+    `Rôle actuel : ${roleActuel}\nNouveau rôle ?\n(visiteur / etudiant / mentor / admin / super_admin)`,
+    roleActuel
+  );
+  if (!choix) return;
+  try {
+    await API.post(`/admin/utilisateurs/${idUser}/role`, { role: choix.trim() });
+    toast(`Rôle mis à jour : ${choix.trim()}.`);
+    changerPanAdmin(document.querySelector('[data-adm=users]'), 'users');
+  } catch (err) { toast(err.message, 'erreur'); }
+}
+async function adminMentors() {
+  if (!MODE.api) return `<p>Backend indisponible.</p>`;
+  const att = await API.get('/admin/mentors-a-verifier');
+  if (!att.length) {
+    return `<h2 style="margin-bottom:18px;">Validation des mentors</h2>
+      <div class="carte"><p style="color:var(--texte-doux);">
+        Aucun mentor en attente de vérification.</p></div>`;
+  }
+  return `<h2 style="margin-bottom:18px;">Validation des mentors (${att.length})</h2>
     <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap:14px;">
-      ${att.map(m => `<div class="carte"><div style="display:flex; gap:12px; align-items:center;">
-        ${avatarHTML(m.initiales, 'l')}
-        <div><strong>${echapper(m.prenom + ' ' + m.nom)}</strong><div style="color:var(--texte-doux); font-size:13px;">${echapper(m.ville + ', ' + m.pays)}</div><span class="tag tag-ambre">${echapper(m.secteur)}</span></div>
-        </div><p style="margin:12px 0; font-size:14px;">${echapper(m.bio)}</p>
+      ${att.map(m => {
+        const init = ((m.prenom||'?')[0] + (m.nom||'?')[0]).toUpperCase();
+        return `<div class="carte"><div style="display:flex; gap:12px; align-items:center;">
+          ${avatarHTML(init, 'l')}
+          <div><strong>${echapper(m.prenom + ' ' + m.nom)}</strong>
+            <div style="color:var(--texte-doux); font-size:13px;">${echapper((m.ville||'') + (m.pays?', '+m.pays:''))}</div></div>
+        </div>
+        <p style="margin:12px 0; font-size:14px;">${echapper(m.bio || 'Pas de biographie.')}</p>
         <div style="display:flex; gap:8px;">
-          <button class="btn btn-primaire btn-petit" style="background:var(--vert);" onclick="toast('${echapper(m.prenom)} validé(e).')">${ic('check','ic ic-s')} Valider</button>
-          <button class="btn btn-danger btn-petit" onclick="toast('${echapper(m.prenom)} refusé(e).', 'erreur')">${ic('croix','ic ic-s')} Refuser</button>
-        </div></div>`).join('')}
+          <button class="btn btn-primaire btn-petit" onclick="adminMentorAction('verifier',${m.id_utilisateur})">${ic('check','ic ic-s')} Valider</button>
+          <button class="btn btn-danger btn-petit" onclick="adminMentorAction('refuser',${m.id_utilisateur})">${ic('croix','ic ic-s')} Refuser</button>
+        </div></div>`;
+      }).join('')}
     </div>`;
 }
-function adminSignalements() {
-  return `<h2 style="margin-bottom:18px;">Signalements</h2>
-    ${[1,2,3].map(i => `<div class="carte" style="margin-bottom:12px;">
+
+async function adminMentorAction(action, idMentor) {
+  const conf = action === 'verifier' ? 'Valider ce mentor ?' : 'Refuser ce mentor (rétrograder en étudiant) ?';
+  if (!confirm(conf)) return;
+  try {
+    await API.post(`/admin/mentors/${idMentor}/${action}`, {});
+    toast(action === 'verifier' ? 'Mentor validé.' : 'Mentor refusé.');
+    changerPanAdmin(document.querySelector('[data-adm=mentors]'), 'mentors');
+  } catch (err) { toast(err.message, 'erreur'); }
+}
+async function adminSignalements() {
+  if (!MODE.api) return `<p>Backend indisponible.</p>`;
+  const liste = await API.get('/admin/signalements?statut=ouvert');
+  if (!liste.length) {
+    return `<h2 style="margin-bottom:18px;">Signalements</h2>
+      <div class="carte"><p style="color:var(--texte-doux);">
+        Aucun signalement en attente.</p></div>`;
+  }
+  return `<h2 style="margin-bottom:18px;">Signalements (${liste.length})</h2>
+    ${liste.map(s => `<div class="carte" style="margin-bottom:12px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-        <strong>Signalement #${1000+i}</strong>
-        <span class="tag tag-rose">Contenu inapproprié</span>
+        <strong>Signalement #${s.id_signalement}</strong>
+        <span class="tag tag-rose">${echapper(s.type_contenu)} #${s.id_contenu}</span>
       </div>
-      <p style="color:var(--texte-doux); font-size:14px;">"Contenu signalé par un utilisateur…"</p>
-      <div style="margin-top:8px; font-size:13px; color:var(--texte-doux);">Auteur : <strong>Utilisateur ${i}</strong> · Signalé par 3 personnes</div>
+      <p style="color:var(--texte); font-size:14px;">« ${echapper(s.motif || 'Sans motif précisé')} »</p>
+      <div style="margin-top:8px; font-size:13px; color:var(--texte-doux);">
+        Signalé par <strong>${echapper(s.prenom + ' ' + s.nom)}</strong>
+        le ${new Date(s.cree_le).toLocaleDateString('fr-FR')}
+      </div>
       <div style="display:flex; gap:8px; margin-top:12px;">
-        <button class="btn btn-secondaire btn-petit" onclick="toast('Contenu masqué.')">Masquer</button>
-        <button class="btn btn-danger btn-petit" onclick="toast('Contenu supprimé.', 'erreur')">Supprimer</button>
-        <button class="btn btn-fantome btn-petit" onclick="toast('Signalement rejeté.')">Rejeter</button>
+        <button class="btn btn-primaire btn-petit" onclick="adminSignalementAction(${s.id_signalement},'traite')">${ic('check','ic ic-s')} Marquer traité</button>
+        <button class="btn btn-fantome btn-petit" onclick="adminSignalementAction(${s.id_signalement},'rejete')">Rejeter</button>
       </div></div>`).join('')}`;
 }
-let categories = ['Technologie','Médecine','Droit','Finance','Arts','Éducation','Ingénierie','Entrepreneuriat'];
-function adminCategories() {
-  return `<h2 style="margin-bottom:18px;">Catégories</h2>
+
+async function adminSignalementAction(idSig, decision) {
+  try {
+    await API.post(`/admin/signalements/${idSig}`, { statut: decision });
+    toast('Signalement mis à jour.');
+    changerPanAdmin(document.querySelector('[data-adm=signalements]'), 'signalements');
+  } catch (err) { toast(err.message, 'erreur'); }
+}
+async function adminCategories() {
+  if (!MODE.api) return `<p>Backend indisponible.</p>`;
+  const liste = await API.get('/admin/secteurs');
+  return `<h2 style="margin-bottom:18px;">Catégories (${liste.length})</h2>
     <div class="carte">
       <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;">
-        ${categories.map(c => `<span class="tag" style="display:inline-flex; align-items:center; gap:6px;">${c} <span style="cursor:pointer; font-weight:700;" onclick="supprimerCat('${c}')">×</span></span>`).join('')}
+        ${liste.map(s => `
+          <span class="tag" style="display:inline-flex; align-items:center; gap:6px;">
+            ${echapper(s.libelle)}
+            <span style="cursor:pointer; font-weight:700;" onclick="supprimerCat(${s.id_secteur},'${echapper(s.libelle)}')">×</span>
+          </span>`).join('')}
       </div>
       <div style="display:flex; gap:8px;">
-        <input id="nouv-cat" placeholder="Nouvelle catégorie…" />
+        <input id="nouv-cat" placeholder="Nouvelle catégorie…" maxlength="80" />
         <button class="btn btn-primaire" onclick="ajouterCat()">Ajouter</button>
       </div>
     </div>`;
 }
-function supprimerCat(c) { categories = categories.filter(x => x !== c); changerPanAdmin(document.querySelector('[data-adm=categories]'), 'categories'); toast(`Catégorie "${c}" supprimée.`); }
-function ajouterCat() {
-  const v = document.getElementById('nouv-cat').value.trim();
+async function supprimerCat(id, nom) {
+  if (!confirm(`Supprimer la catégorie « ${nom} » ?`)) return;
+  try {
+    await API.delete(`/admin/secteurs/${id}`);
+    toast('Catégorie supprimée.');
+    changerPanAdmin(document.querySelector('[data-adm=categories]'), 'categories');
+  } catch (err) { toast(err.message, 'erreur'); }
+}
+async function ajouterCat() {
+  const v = (document.getElementById('nouv-cat')?.value || '').trim();
   if (!v) return toast('Saisissez un nom.', 'erreur');
-  categories.push(v); toast(`Catégorie "${v}" ajoutée.`);
-  changerPanAdmin(document.querySelector('[data-adm=categories]'), 'categories');
+  try {
+    await API.post('/admin/secteurs', { libelle: v });
+    toast(`Catégorie « ${v} » ajoutée.`);
+    changerPanAdmin(document.querySelector('[data-adm=categories]'), 'categories');
+  } catch (err) { toast(err.message, 'erreur'); }
+}
+
+async function adminAudit() {
+  if (!MODE.api) return `<p>Backend indisponible.</p>`;
+  const liste = await API.get('/admin/audit?limite=50');
+  if (!liste.length) {
+    return `<h2 style="margin-bottom:18px;">Journal d'audit</h2>
+      <div class="carte"><p style="color:var(--texte-doux);">Aucune action enregistrée.</p></div>`;
+  }
+  return `<h2 style="margin-bottom:18px;">Journal d'audit (${liste.length} dernières actions)</h2>
+    <table class="tableau">
+      <thead><tr><th>Date</th><th>Acteur</th><th>Action</th><th>Cible</th><th>Détails</th></tr></thead>
+      <tbody>${liste.map(a => `<tr>
+        <td>${new Date(a.cree_le).toLocaleString('fr-FR')}</td>
+        <td>${echapper(a.prenom + ' ' + a.nom)}</td>
+        <td><span class="tag">${echapper(a.action)}</span></td>
+        <td>${a.type_cible ? echapper(a.type_cible) + ' #' + a.id_cible : '—'}</td>
+        <td style="font-size:12px; color:var(--texte-doux);">${echapper(a.details || '')}</td>
+      </tr>`).join('')}</tbody>
+    </table>`;
 }
 
 /* ============================================================
@@ -1462,10 +1624,11 @@ window.addEventListener('DOMContentLoaded', async () => {
   // Détecte si le backend est joignable ; charge la session si oui
   await initialiserApi();
 
-  // Indicateur discret du mode actuel (utile au debug visuel)
-  const marque = document.querySelector('.hero-nav .marque') || document.querySelector('.navbar .marque');
-  if (marque && !MODE.api) {
-    marque.title = 'Mode démo — backend non détecté (données factices)';
+  // Affiche le bandeau démo si le backend n'est pas joignable
+  const bandeau = document.getElementById('bandeauDemo');
+  if (bandeau) {
+    if (MODE.api) bandeau.classList.add('cache');
+    else          bandeau.classList.remove('cache');
   }
 
   // Si déjà connecté (cookie valide), basculer directement dans l'app

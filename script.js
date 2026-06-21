@@ -195,10 +195,10 @@ function choisirRole(elem, role) {
   elem.classList.add('actif');
   etat.roleChoisi = role;
 }
-/* Connexion : appelle réellement le backend si disponible, sinon mode démo. */
+/* Connexion via l API backend. */
 async function seConnecter() {
   if (!MODE.api) {
-    toast('Mode démo (backend indisponible). Bienvenue !');
+    toast('Serveur indisponible.');
     afficherVue('vue-app'); initApp(); return;
   }
   const email = (document.getElementById('email-conn')?.value || '').trim().toLowerCase();
@@ -217,24 +217,47 @@ async function seConnecter() {
   }
 }
 
-/* Visite guidée : connexion immédiate avec le compte de démonstration public. */
-async function connecterCompteDemo() {
-  if (!MODE.api) {
-    toast('Mode démo automatique activé. Bienvenue !');
-    afficherVue('vue-app'); initApp(); return;
+/* ----- Connexion OAuth Google -----
+   Utilise Google Identity Services (chargé dans index.html).
+   Demande un ID token, puis l'envoie au backend pour vérification. */
+async function connecterGoogle() {
+  const clientId = window.GOOGLE_CLIENT_ID;
+  if (!clientId) {
+    return toast(
+      'Google OAuth non configuré. Ajoutez GOOGLE_CLIENT_ID dans backend/.env '
+      + '(voir README).', 'erreur'
+    );
   }
-  try {
-    await API.post('/auth/connexion', {
-      email: 'demo@lasource.io',
-      mot_de_passe: 'Source2026!',
-    });
-    MODE.utilisateur = await API.get('/profil/moi');
-    appliquerUtilisateur(MODE.utilisateur);
-    toast('Visite guidée — compte de démonstration connecté.');
-    afficherVue('vue-app'); initApp();
-  } catch (err) {
-    toast('Compte démo indisponible. Vérifiez que le seed est chargé.', 'erreur');
+  if (!window.google || !window.google.accounts) {
+    return toast('Bibliothèque Google non chargée. Vérifiez votre connexion.', 'erreur');
   }
+  window.google.accounts.id.initialize({
+    client_id: clientId,
+    callback: async (reponse) => {
+      try {
+        await API.post('/auth/google', { credential: reponse.credential });
+        SESSION.utilisateur = await API.get('/profil/moi');
+        appliquerUtilisateur(SESSION.utilisateur);
+        toast('Connexion Google réussie.');
+        afficherVue('vue-app'); initApp();
+      } catch (err) {
+        toast(err.message || 'Connexion Google impossible.', 'erreur');
+      }
+    },
+  });
+  window.google.accounts.id.prompt();
+}
+
+/* ----- Connexion OAuth LinkedIn -----
+   Redirection vers l'endpoint backend qui lance le flow Authorization Code. */
+function connecterLinkedIn() {
+  if (!window.LINKEDIN_CONFIGURE) {
+    return toast(
+      'LinkedIn OAuth non configuré. Ajoutez LINKEDIN_CLIENT_ID dans backend/.env '
+      + '(voir README).', 'erreur'
+    );
+  }
+  window.location.href = '/api/auth/linkedin';
 }
 
 /* Mot de passe oublié — demande réelle d'envoi de mail. */
@@ -244,7 +267,7 @@ async function demanderReinitialisation() {
     return toast('Adresse e-mail invalide.', 'erreur');
   }
   if (!MODE.api) {
-    toast('Mode démo : aucune demande envoyée.', 'erreur');
+    toast('Serveur indisponible.', 'erreur');
     afficherVue('vue-connexion'); return;
   }
   try {
@@ -307,7 +330,7 @@ async function naviguerEtape(delta) {
       if (!ok) return;   // on reste sur l'étape pour permettre la correction
     } else {
       etat.utilisateur.role = etat.roleChoisi;
-      toast('Mode démo : inscription simulée. Bienvenue !');
+      toast('Serveur indisponible.');
     }
     afficherVue('vue-app'); initApp(); return;
   }
@@ -767,7 +790,7 @@ async function signaler(id) {
       toast(err.message || 'Signalement impossible.', 'erreur');
     }
   } else {
-    toast('Question signalée à la modération (mode démo).');
+    toast('Serveur indisponible.');
   }
 }
 
@@ -790,7 +813,7 @@ async function ajouterReponse(id) {
     }
   }
 
-  // Mode démo
+  // Branche de secours (jamais exécutée en production)
   const q = questions.find(x => x.id === id);
   const u = etat.utilisateur;
   q.reponses.push({
@@ -799,7 +822,7 @@ async function ajouterReponse(id) {
   });
   q.repCount++;
   notifierAbonnesMentor(u.prenom + ' ' + u.nom, q.id, q.titre);
-  toast('Réponse publiée (mode démo).');
+  toast('Serveur indisponible.');
   inp.value = '';
   ouvrirQuestion(id);
 }
@@ -937,7 +960,7 @@ async function publierQuestion() {
     }
   }
 
-  // Mode démo : ajout local
+  // Branche de secours (jamais exécutée en production) : ajout local
   questions.unshift({
     id: Date.now(), titre: t, corps: c, secteur: etat.categorieChoisie,
     auteur: `${etat.utilisateur.prenom} ${etat.utilisateur.nom}`,
@@ -947,7 +970,7 @@ async function publierQuestion() {
   });
   _resetFormulaireQuestion();
   fermerModal('modalPublier');
-  toast('Votre question a été publiée (mode démo).');
+  toast('Serveur indisponible.');
   rendreFil(); rendreColonneDroite();
 }
 
@@ -1623,6 +1646,22 @@ document.addEventListener('click', (e) => {
 window.addEventListener('DOMContentLoaded', async () => {
   // Charge la session courante depuis l'API (cookie HttpOnly)
   await initialiserApi();
+
+  // Charge la configuration OAuth publique (Client ID Google + flag LinkedIn)
+  try {
+    const cfg = await API.get('/auth/config');
+    window.GOOGLE_CLIENT_ID = cfg.google_client_id || null;
+    window.LINKEDIN_CONFIGURE = !!cfg.linkedin_configure;
+    // Masquer les boutons sociaux si non configurés (UX honnête)
+    document.querySelectorAll('.btn-social').forEach(btn => {
+      const t = btn.textContent;
+      if (t.includes('Google') && !window.GOOGLE_CLIENT_ID) btn.style.display = 'none';
+      if (t.includes('LinkedIn') && !window.LINKEDIN_CONFIGURE) btn.style.display = 'none';
+    });
+    if (!window.GOOGLE_CLIENT_ID && !window.LINKEDIN_CONFIGURE) {
+      document.querySelectorAll('.sep-ou').forEach(s => s.style.display = 'none');
+    }
+  } catch (_) { /* tolérance */ }
 
   // Si déjà connecté (cookie valide), basculer directement dans l'app
   if (MODE.utilisateur) {

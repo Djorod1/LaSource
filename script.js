@@ -376,7 +376,7 @@ async function finaliserInscription() {
 
   // Données collectées pendant l'onboarding
   const secteurs = [...document.querySelectorAll('#etape-2 .chip-select.actif')]
-    .map(c => c.textContent.trim());
+    .map(c => c.textContent.trim().replace(/\s*×$/, '').replace(/^\+\s*Autre$/, '')).filter(Boolean);
   const pays = document.querySelector('#etape-1 select')?.value || '';
   const etudes = (document.querySelector('#etape-1 input')?.value || '').trim();
   const bio = (document.querySelector('#etape-1 textarea')?.value || '').trim();
@@ -452,26 +452,34 @@ function majEtapeOnboarding() {
 }
 function toggleChip(elem) { elem.classList.toggle('actif'); }
 
-/* Chip "Autre" : permet à l'utilisateur de saisir un secteur personnalisé. */
-function toggleChipAutre(elem) {
-  elem.classList.toggle('actif');
+/* Chip "Autre" : ouvre le champ d'ajout de secteurs personnalisés. */
+function ouvrirAjoutSecteur() {
   const champ = document.getElementById('champ-autre-secteur');
   const input = document.getElementById('input-autre-secteur');
   if (!champ || !input) return;
-  if (elem.classList.contains('actif')) {
-    champ.style.display = '';
-    setTimeout(() => input.focus(), 50);
-  } else {
-    champ.style.display = 'none';
-    input.value = '';
-    elem.textContent = 'Autre';
-  }
+  champ.style.display = '';
+  setTimeout(() => input.focus(), 50);
 }
-function majChipAutre(val) {
-  const chip = document.querySelector('#etape-2 .chip-select[data-autre="1"]');
-  if (!chip) return;
-  const v = (val || '').trim();
-  chip.textContent = v || 'Autre';
+/* Ajoute un secteur personnalisé (peut être appelé plusieurs fois). */
+function ajouterSecteurPerso() {
+  const input = document.getElementById('input-autre-secteur');
+  const conteneur = document.querySelector('#etape-2 .chips-select');
+  if (!input || !conteneur) return;
+  const v = (input.value || '').trim();
+  if (!v) { toast('Saisissez un secteur.', 'erreur'); return; }
+  // Anti doublons
+  const existe = [...conteneur.querySelectorAll('.chip-select')]
+    .some(c => c.textContent.trim().replace(/\s*×$/, '').toLowerCase() === v.toLowerCase());
+  if (existe) { toast('Ce secteur est déjà présent.', 'erreur'); input.value = ''; return; }
+  const chip = document.createElement('div');
+  chip.className = 'chip-select chip-perso actif';
+  chip.dataset.perso = '1';
+  chip.innerHTML = `<span onclick="toggleChip(this.parentElement)">${v}</span><button type="button" class="chip-sup" onclick="this.parentElement.remove()" aria-label="Supprimer">×</button>`;
+  // Insérer avant le chip "+ Autre"
+  const chipAutre = conteneur.querySelector('[data-autre="1"]');
+  conteneur.insertBefore(chip, chipAutre);
+  input.value = '';
+  input.focus();
 }
 
 /* Liste exhaustive des pays (FR) pour le sélecteur de l'onboarding. */
@@ -929,7 +937,7 @@ function rendreColonneDroite() {
   document.getElementById('questions-tendance').innerHTML =
     [...questions].sort((a,b) => b.utile - a.utile).slice(0, 5).map(q => `
       <li><a href="#" onclick="event.preventDefault(); ouvrirQuestion(${q.id})">${echapper(q.titre)}</a>
-      <span>${q.utile} utiles · ${q.repCount} réponses</span></li>`).join('');
+      <span>${q.utile} en favoris · ${q.repCount} réponses</span></li>`).join('');
   document.getElementById('mentors-suggeres').innerHTML =
     mentors.slice(0, 4).map(m => {
       const suivi = etat.suivis.has(m.id);
@@ -1406,18 +1414,22 @@ function changerPanParam(elem, p) {
 
 function panneauCompte() {
   const u = etat.utilisateur;
+  const secteursDefaut = ['Technologie','Médecine','Droit','Finance','Arts','Éducation','Ingénierie','Entrepreneuriat'];
+  const secteursPerso = (u.secteurs || []).filter(s => !secteursDefaut.includes(s));
+  const optsPays = LISTE_PAYS.map(p =>
+    `<option value="${echapper(p)}"${p === u.pays ? ' selected' : ''}>${echapper(p)}</option>`).join('');
   return `<div class="section-param">
     <h2>Mon compte</h2>
     <div class="champs-cote">
-      <div class="champ"><label>Prénom</label><input value="${echapper(u.prenom)}" /></div>
-      <div class="champ"><label>Nom</label><input value="${echapper(u.nom)}" /></div>
+      <div class="champ"><label>Prénom</label><input id="pc-prenom" value="${echapper(u.prenom)}" /></div>
+      <div class="champ"><label>Nom</label><input id="pc-nom" value="${echapper(u.nom)}" /></div>
     </div>
-    <div class="champ"><label>E-mail</label><input type="email" value="${echapper(u.prenom.toLowerCase() + '.' + u.nom.toLowerCase())}@email.com" /></div>
+    <div class="champ"><label>E-mail</label><input id="pc-email" type="email" value="${echapper(u.email || (u.prenom.toLowerCase() + '.' + u.nom.toLowerCase() + '@email.com'))}" /></div>
     <div class="champ"><label>Pays</label>
-      <select><option>France</option><option>Belgique</option><option>Suisse</option><option>Canada</option><option>Sénégal</option><option>Maroc</option></select>
+      <select id="pc-pays"><option value="">— Sélectionnez votre pays —</option>${optsPays}</select>
     </div>
     <div class="champ"><label>Biographie</label>
-      <textarea maxlength="500" oninput="document.getElementById('bio-cnt').textContent=this.value.length">${echapper(u.bio)}</textarea>
+      <textarea id="pc-bio" maxlength="500" oninput="document.getElementById('bio-cnt').textContent=this.value.length">${echapper(u.bio)}</textarea>
       <div class="compteur-car"><span id="bio-cnt">${u.bio.length}</span>/500</div>
     </div>
     <div class="champ"><label>Photo de profil</label>
@@ -1430,20 +1442,78 @@ function panneauCompte() {
       </div>
     </div>
     <div class="champ"><label>Secteurs d'intérêt</label>
-      <div class="chips-select">
-        ${['Technologie','Médecine','Droit','Finance','Arts','Éducation','Ingénierie','Entrepreneuriat'].map(s =>
+      <div class="chips-select" id="pc-chips">
+        ${secteursDefaut.map(s =>
           `<div class="chip-select ${u.secteurs.includes(s)?'actif':''}" onclick="toggleChip(this)">${s}</div>`).join('')}
+        ${secteursPerso.map(s =>
+          `<div class="chip-select chip-perso actif" data-perso="1"><span onclick="toggleChip(this.parentElement)">${echapper(s)}</span><button type="button" class="chip-sup" onclick="this.parentElement.remove()" aria-label="Supprimer">×</button></div>`).join('')}
+        <div class="chip-select" data-autre="1" onclick="document.getElementById('pc-autre-wrap').style.display=''; document.getElementById('pc-autre-input').focus();">+ Autre</div>
+      </div>
+      <div id="pc-autre-wrap" style="display:none; margin-top:10px;">
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="pc-autre-input" placeholder="Ex : Agriculture durable" style="flex:1;" />
+          <button type="button" class="btn btn-secondaire btn-petit" onclick="ajouterSecteurPersoParam()">Ajouter</button>
+        </div>
+        <p style="font-size:12px; color:var(--texte-doux); margin-top:6px;">Vous pouvez ajouter plusieurs secteurs personnalisés, et supprimer ceux ajoutés en cliquant sur ×.</p>
       </div>
     </div>
-    <button class="btn btn-primaire" onclick="toast('Modifications enregistrées.')">Enregistrer</button>
+    <button class="btn btn-primaire" onclick="sauverCompte()">Enregistrer</button>
   </div>`;
+}
+
+function ajouterSecteurPersoParam() {
+  const input = document.getElementById('pc-autre-input');
+  const conteneur = document.getElementById('pc-chips');
+  if (!input || !conteneur) return;
+  const v = (input.value || '').trim();
+  if (!v) { toast('Saisissez un secteur.', 'erreur'); return; }
+  const existe = [...conteneur.querySelectorAll('.chip-select')]
+    .some(c => c.textContent.trim().replace(/\s*×$/, '').replace(/^\+\s*Autre$/, '').toLowerCase() === v.toLowerCase());
+  if (existe) { toast('Ce secteur est déjà présent.', 'erreur'); input.value = ''; return; }
+  const chip = document.createElement('div');
+  chip.className = 'chip-select chip-perso actif';
+  chip.dataset.perso = '1';
+  chip.innerHTML = `<span onclick="toggleChip(this.parentElement)">${echapper(v)}</span><button type="button" class="chip-sup" onclick="this.parentElement.remove()" aria-label="Supprimer">×</button>`;
+  const chipAutre = conteneur.querySelector('[data-autre="1"]');
+  conteneur.insertBefore(chip, chipAutre);
+  input.value = '';
+  input.focus();
+}
+
+function sauverCompte() {
+  const prenom = (document.getElementById('pc-prenom')?.value || '').trim();
+  const nom = (document.getElementById('pc-nom')?.value || '').trim();
+  const email = (document.getElementById('pc-email')?.value || '').trim();
+  const pays = document.getElementById('pc-pays')?.value || '';
+  const bio = document.getElementById('pc-bio')?.value || '';
+  const secteurs = [...document.querySelectorAll('#pc-chips .chip-select.actif')]
+    .map(c => c.textContent.trim().replace(/\s*×$/, '').replace(/^\+\s*Autre$/, ''))
+    .filter(Boolean);
+  if (!prenom || !nom) { toast('Prénom et nom obligatoires.', 'erreur'); return; }
+  etat.utilisateur.prenom = prenom;
+  etat.utilisateur.nom = nom;
+  etat.utilisateur.initiales = (prenom[0] + nom[0]).toUpperCase();
+  etat.utilisateur.email = email;
+  etat.utilisateur.pays = pays;
+  etat.utilisateur.bio = bio;
+  etat.utilisateur.secteurs = secteurs;
+  // Persistance en mode navigateur
+  try {
+    if (typeof Comptes !== 'undefined' && Comptes.sessionId && Comptes.sessionId()) {
+      Comptes.majCourant({ prenom, nom, email: email.toLowerCase(), pays, bio, secteurs });
+    }
+  } catch (_) {}
+  // Rafraîchir la navigation
+  const navAv = document.getElementById('avatar-nav');
+  if (navAv && !etat.utilisateur.photo) navAv.textContent = etat.utilisateur.initiales;
+  if (typeof rendreSidebarProfil === 'function') rendreSidebarProfil();
+  toast('Modifications enregistrées.');
 }
 
 function panneauNotifsParam() {
   const lignes = [
     ['Nouvelle réponse à mes questions', true],
     ['Réactions sur mes publications', true],
-    ['Nouveaux abonnés', true],
     ['Nouvelles questions dans mes secteurs', false],
     ['Réponses des mentors que je suis', true],
     ['Newsletter hebdomadaire', false],
@@ -1464,13 +1534,13 @@ function panneauSecurite() {
   ];
   return `<div class="section-param"><h2>Sécurité</h2>
     <h3 style="font-family:'DM Sans'; font-size:15px; margin-bottom:10px;">Changer le mot de passe</h3>
-    <div class="champ"><label>Mot de passe actuel</label><input type="password" /></div>
+    <div class="champ"><label>Mot de passe actuel</label><div class="champ-mdp"><input type="password" /><button type="button" class="btn-oeil" aria-label="Afficher le mot de passe" onclick="basculerOeil(this)"><svg class="oeil-ouvert" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg><svg class="oeil-ferme" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a19.77 19.77 0 0 1 4.22-5.17"/><path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 7 11 7a19.85 19.85 0 0 1-3.17 4.05"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button></div></div>
     <div class="champ"><label>Nouveau mot de passe</label>
-      <input type="password" id="mdp-nouveau" oninput="majRobustesseMdp(this.value)" />
+      <div class="champ-mdp"><input type="password" id="mdp-nouveau" oninput="majRobustesseMdp(this.value)" /><button type="button" class="btn-oeil" aria-label="Afficher le mot de passe" onclick="basculerOeil(this)"><svg class="oeil-ouvert" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg><svg class="oeil-ferme" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a19.77 19.77 0 0 1 4.22-5.17"/><path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 7 11 7a19.85 19.85 0 0 1-3.17 4.05"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button></div>
       <div class="jauge-mdp"><div class="jauge-remplir" id="jauge-mdp"></div></div>
       <div class="aide-mdp" id="aide-mdp">Au moins 8 caractères, avec majuscule, chiffre et symbole.</div>
     </div>
-    <div class="champ"><label>Confirmer le nouveau mot de passe</label><input type="password" /></div>
+    <div class="champ"><label>Confirmer le nouveau mot de passe</label><div class="champ-mdp"><input type="password" /><button type="button" class="btn-oeil" aria-label="Afficher le mot de passe" onclick="basculerOeil(this)"><svg class="oeil-ouvert" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg><svg class="oeil-ferme" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a19.77 19.77 0 0 1 4.22-5.17"/><path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 7 11 7a19.85 19.85 0 0 1-3.17 4.05"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button></div></div>
     <button class="btn btn-primaire" onclick="toast('Mot de passe modifié.')">Modifier le mot de passe</button>
     <div style="margin-top:24px;">
       <div class="ligne-toggle"><div><strong>Authentification à deux facteurs</strong><div class="desc">Un code unique sera demandé à chaque connexion sur un nouvel appareil.</div></div><div class="toggle" onclick="this.classList.toggle('on'); toast('Préférence mise à jour.')"></div></div>
@@ -1841,4 +1911,44 @@ function repondreCookies(accepte) {
   localStorage.setItem('lasource_cookies', accepte ? 'accepte' : 'refuse');
   document.getElementById('cookieBanniere')?.classList.add('cache');
   toast(accepte ? 'Préférences enregistrées. Merci !' : 'Seuls les cookies essentiels seront utilisés.');
+}
+
+
+/* ============================================================
+   UI : bouton oeil (afficher/masquer mot de passe) + menus burger
+   ============================================================ */
+function basculerOeil(btn) {
+  const wrap = btn.closest('.champ-mdp');
+  if (!wrap) return;
+  const input = wrap.querySelector('input');
+  if (!input) return;
+  const affiche = input.type === 'password';
+  input.type = affiche ? 'text' : 'password';
+  const ouvert = btn.querySelector('.oeil-ouvert');
+  const ferme = btn.querySelector('.oeil-ferme');
+  if (ouvert && ferme) {
+    ouvert.style.display = affiche ? 'none' : '';
+    ferme.style.display  = affiche ? '' : 'none';
+  }
+  btn.setAttribute('aria-label', affiche ? 'Masquer le mot de passe' : 'Afficher le mot de passe');
+}
+function basculerBurgerHero() {
+  const a = document.getElementById('actionsHero');
+  const b = document.getElementById('burgerHero');
+  if (!a) return;
+  a.classList.toggle('ouvert');
+  if (b) b.classList.toggle('actif');
+}
+function basculerBurgerApp() {
+  const m = document.getElementById('menuBurgerApp');
+  const b = document.getElementById('burgerApp');
+  if (!m) return;
+  m.classList.toggle('ouvert');
+  if (b) b.classList.toggle('actif');
+}
+function fermerBurgerApp() {
+  const m = document.getElementById('menuBurgerApp');
+  const b = document.getElementById('burgerApp');
+  if (m) m.classList.remove('ouvert');
+  if (b) b.classList.remove('actif');
 }

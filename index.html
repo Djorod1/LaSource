@@ -48,7 +48,10 @@
         </span>
         <span class="marque-texte">LaSourc<span class="lettre-rouge">e</span></span>
       </a>
-      <div class="actions">
+      <button class="burger burger-hero" id="burgerHero" aria-label="Menu" onclick="basculerBurgerHero()">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="actions" id="actionsHero">
         <button class="btn btn-secondaire" onclick="afficherVue('vue-connexion')">Se connecter</button>
         <button class="btn btn-primaire" onclick="afficherVue('vue-inscription')">Créer un compte</button>
       </div>
@@ -104,11 +107,7 @@
           <strong>Lancer une SaaS sans co-fondateur, est-ce viable ?</strong>
           <p>Léa T. — Étudiante en entrepreneuriat · 5 réponses</p>
         </div>
-        <a href="#" class="hero-illu-lien">
-          Voir toutes les questions
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
-        </a>
-      </div>
+        </div>
     </div>
     <div class="hero-stats-wrap">
       <div class="hero-stats">
@@ -172,7 +171,7 @@
       </div>
       <div class="champ">
         <label>Mot de passe</label>
-        <input type="password" id="mdp-conn" placeholder="••••••••" />
+        <div class="champ-mdp"><input type="password" id="mdp-conn" placeholder="••••••••" /><button type="button" class="btn-oeil" aria-label="Afficher le mot de passe" onclick="basculerOeil(this)"><svg class="oeil-ouvert" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg><svg class="oeil-ferme" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a19.77 19.77 0 0 1 4.22-5.17"/><path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 7 11 7a19.85 19.85 0 0 1-3.17 4.05"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button></div>
       </div>
       <div style="text-align:right; margin-bottom: 16px;">
         <a href="#" onclick="afficherVue('vue-oubli'); return false;">Mot de passe oublié ?</a>
@@ -220,8 +219,8 @@
         <div class="champ"><label>Nom</label><input type="text" id="nom-ins" placeholder="Dupont" /></div>
       </div>
       <div class="champ"><label>Adresse e-mail</label><input type="email" id="email-ins" placeholder="vous@exemple.com" /></div>
-      <div class="champ"><label>Mot de passe</label><input type="password" id="mdp-ins" placeholder="Au moins 8 caractères" /></div>
-      <div class="champ"><label>Confirmation du mot de passe</label><input type="password" id="mdp2-ins" placeholder="Retapez votre mot de passe" /></div>
+      <div class="champ"><label>Mot de passe</label><div class="champ-mdp"><input type="password" id="mdp-ins" placeholder="Au moins 8 caractères" /><button type="button" class="btn-oeil" aria-label="Afficher le mot de passe" onclick="basculerOeil(this)"><svg class="oeil-ouvert" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg><svg class="oeil-ferme" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a19.77 19.77 0 0 1 4.22-5.17"/><path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 7 11 7a19.85 19.85 0 0 1-3.17 4.05"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button></div></div>
+      <div class="champ"><label>Confirmation du mot de passe</label><div class="champ-mdp"><input type="password" id="mdp2-ins" placeholder="Retapez votre mot de passe" /><button type="button" class="btn-oeil" aria-label="Afficher le mot de passe" onclick="basculerOeil(this)"><svg class="oeil-ouvert" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg><svg class="oeil-ferme" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a19.77 19.77 0 0 1 4.22-5.17"/><path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 7 11 7a19.85 19.85 0 0 1-3.17 4.05"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button></div></div>
 
       <button class="btn btn-primaire btn-bloc" onclick="commencerOnboarding()">Continuer →</button>
 
@@ -308,11 +307,15 @@
           <div class="chip-select" onclick="toggleChip(this)">Éducation</div>
           <div class="chip-select" onclick="toggleChip(this)">Ingénierie</div>
           <div class="chip-select" onclick="toggleChip(this)">Entrepreneuriat</div>
-          <div class="chip-select" data-autre="1" onclick="toggleChipAutre(this)">Autre</div>
+          <div class="chip-select" data-autre="1" onclick="ouvrirAjoutSecteur(this)">+ Autre</div>
         </div>
         <div class="champ" id="champ-autre-secteur" style="display:none; margin-top:10px;">
           <label>Précisez votre secteur</label>
-          <input type="text" id="input-autre-secteur" placeholder="Ex : Agriculture durable" oninput="majChipAutre(this.value)" />
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="input-autre-secteur" placeholder="Ex : Agriculture durable" style="flex:1;" />
+            <button type="button" class="btn btn-secondaire btn-petit" onclick="ajouterSecteurPerso()">Ajouter</button>
+          </div>
+          <p style="font-size:12px; color:var(--texte-doux); margin-top:6px;">Vous pouvez ajouter plusieurs secteurs personnalisés.</p>
         </div>
       </div>
 
@@ -368,6 +371,9 @@
       </button>
       <div class="dropdown-recherche" id="dropRech"></div>
     </div>
+    <button class="burger burger-app" id="burgerApp" aria-label="Menu" onclick="basculerBurgerApp()">
+      <span></span><span></span><span></span>
+    </button>
     <div class="nav-liens">
       <button class="nav-bouton" data-section="fil" onclick="naviguerApp('fil')" title="Accueil" aria-label="Accueil"><svg class="ic ic-l" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.4 12 4l9 7.4"/><path d="M5.5 9.8V20h13V9.8"/></svg></button>
       <button class="nav-bouton" data-section="notifs" onclick="basculerNotifs()" title="Notifications" aria-label="Notifications">
@@ -382,6 +388,14 @@
       </div>
     </div>
   </nav>
+
+  <div class="menu-burger-app" id="menuBurgerApp">
+    <button onclick="naviguerApp('fil'); fermerBurgerApp();">Accueil</button>
+    <button onclick="basculerNotifs(); fermerBurgerApp();">Notifications</button>
+    <button onclick="naviguerApp('profil'); fermerBurgerApp();">Mon profil</button>
+    <button onclick="naviguerApp('parametres'); fermerBurgerApp();">Paramètres</button>
+    <button onclick="seDeconnecter(); fermerBurgerApp();" style="color:var(--rouge);">Se déconnecter</button>
+  </div>
 
   <div class="menu-profil" id="menuProfil">
     <button onclick="naviguerApp('profil')"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 4-6.5 8-6.5s8 2.1 8 6.5"/></svg> Mon profil</button>
@@ -418,13 +432,17 @@
         <div class="publier-vide" onclick="ouvrirModal('modalPublier')">
           <div class="avatar avatar-s" id="avatar-fil">MD</div>
           <input type="text" placeholder="Quelle est votre question aujourd'hui ?" readonly />
-          <button class="btn btn-primaire btn-petit">Publier</button>
+          <button class="btn btn-primaire btn-petit">
+            <span class="txt-publier-desktop">Publier</span>
+            <span class="txt-publier-mobile">Poser une question</span>
+          </button>
         </div>
         <div class="filtres">
-          <div class="onglets">
+          <div class="onglets onglets-scroll">
             <div class="onglet actif" data-tri="recent" onclick="changerTri(this, 'recent')">Les plus récentes</div>
             <div class="onglet" data-tri="populaire" onclick="changerTri(this, 'populaire')">Les plus populaires</div>
             <div class="onglet" data-tri="sansrep" onclick="changerTri(this, 'sansrep')">Sans réponse</div>
+            <div class="onglet" data-tri="suivis" onclick="changerTri(this, 'suivis')">Mentor suivi</div>
           </div>
           <select id="filtre-secteur" onchange="rendreFil()">
             <option value="">Tous les secteurs</option>

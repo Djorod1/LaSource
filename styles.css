@@ -417,6 +417,7 @@ label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; c
   border-radius: var(--rayon-m); margin-bottom: 16px; cursor: text;
 }
 .publier-vide input { background: var(--fond); cursor: pointer; }
+.txt-publier-mobile { display: none; }
 .filtres {
   background: var(--surface); border: 1px solid var(--bordure);
   border-top: 3px solid var(--orange-vif);
@@ -919,6 +920,9 @@ img, svg, video { max-width: 100%; height: auto; }
 /* ---------- ≤ 720px : grand mobile ---------- */
 @media (max-width: 720px) {
   .nav-recherche { display: none; }
+  /* Accueil, notifications et photo de profil masqués sur mobile :
+     ils sont déjà accessibles via le menu burger (☰). */
+  .nav-liens { display: none; }
   .navbar { padding: 0 12px; gap: 8px; height: 60px; }
   .layout-3col, .layout-2col { padding: 12px; gap: 12px; }
   .layout-admin { padding: 0; }
@@ -933,10 +937,6 @@ img, svg, video { max-width: 100%; height: auto; }
   .modal header h3 { font-size: 1.1rem; }
   .modal .pied { flex-wrap: wrap; }
   .modal .pied .btn { flex: 1; }
-  .publier-vide { flex-wrap: wrap; }
-  .publier-vide input { flex: 1 1 100%; order: 2; }
-  .publier-vide .avatar { order: 1; }
-  .publier-vide .btn { order: 3; margin-left: auto; }
   .section-param { padding: 16px; }
   .section-param h2 { font-size: 1.2rem; }
   .ligne-toggle { gap: 12px; }
@@ -1473,4 +1473,120 @@ img, svg, video { max-width: 100%; height: auto; }
 @media (max-width: 520px) {
   .hero-stats-grid { grid-template-columns: 1fr; }
   .hero-avantages { gap: 14px; }
+}
+
+
+/* ============================================================
+   AJOUTS — mot de passe (oeil), burgers, chips supprimables, mobile
+   ============================================================ */
+
+/* Bouton oeil dans un champ mot de passe */
+.champ-mdp { position: relative; }
+.champ-mdp input { padding-right: 42px; width: 100%; }
+.btn-oeil {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  background: transparent; border: none; cursor: pointer;
+  color: var(--texte-doux); padding: 6px; display: inline-flex;
+  align-items: center; justify-content: center; border-radius: 6px;
+}
+.btn-oeil:hover { color: var(--noir); background: var(--fond); }
+
+/* Chip personnalisé avec bouton × */
+.chip-perso { display: inline-flex; align-items: center; gap: 6px; padding-right: 6px; }
+.chip-perso .chip-sup {
+  background: transparent; border: none; cursor: pointer;
+  color: inherit; font-size: 16px; line-height: 1;
+  padding: 0 4px; border-radius: 4px;
+}
+.chip-perso .chip-sup:hover { background: rgba(0,0,0,.08); }
+
+/* Burgers (cachés en desktop) */
+.burger {
+  display: none;
+  width: 40px; height: 40px; border: 1px solid var(--bordure);
+  background: #fff; border-radius: 8px; cursor: pointer;
+  flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  padding: 0;
+}
+.burger span {
+  display: block; width: 20px; height: 2px; background: var(--noir);
+  border-radius: 2px; transition: transform .2s;
+}
+
+/* Menu burger app (mobile) */
+.menu-burger-app {
+  display: none;
+  position: fixed; top: 60px; right: 12px; left: 12px;
+  background: #fff; border: 1px solid var(--bordure);
+  border-radius: 12px; box-shadow: 0 12px 32px rgba(0,0,0,.14);
+  z-index: 90; padding: 8px; flex-direction: column;
+}
+.menu-burger-app.ouvert { display: flex; }
+.menu-burger-app button {
+  background: transparent; border: none; text-align: left;
+  padding: 12px 14px; font-size: 15px; cursor: pointer;
+  border-radius: 8px; color: var(--noir);
+}
+.menu-burger-app button:hover { background: var(--fond); }
+
+/* Onglets défilement horizontal */
+.onglets.onglets-scroll {
+  overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.onglets.onglets-scroll::-webkit-scrollbar { display: none; }
+.onglets.onglets-scroll .onglet { flex-shrink: 0; white-space: nowrap; }
+
+/* ---------- Mobile (≤ 720px) ---------- */
+@media (max-width: 720px) {
+  /* Hero : afficher burger et masquer actions par défaut */
+  .burger-hero { display: inline-flex; }
+  .hero-nav .actions {
+    display: none;
+    position: absolute; top: 68px; right: 6%; left: 6%;
+    background: #fff; border: 1px solid var(--bordure);
+    border-radius: 12px; padding: 12px; z-index: 40;
+    box-shadow: 0 12px 32px rgba(0,0,0,.12);
+    flex-direction: column;
+  }
+  .hero-nav .actions.ouvert { display: flex; }
+  .hero-nav .actions .btn { width: 100%; }
+  .hero-nav { position: relative; }
+
+  /* App : afficher burger */
+  .burger-app { display: inline-flex; }
+
+  /* Onboarding : bouton photo et bouton final tenant à l'écran */
+  #etape-3 .btn { padding: 8px 12px; font-size: 13px; white-space: normal; text-align: left; }
+  #etape-3 > div { flex-wrap: wrap; }
+  #ob-suiv, #ob-prec { padding: 9px 12px; font-size: 13px; white-space: normal; }
+
+  /* Fil : ligne "publier" — sur mobile, on retire carrément le champ de
+     saisie et le bouton devient la zone cliquable pleine largeur, avec
+     un libellé plus explicite. */
+  .publier-vide { flex-wrap: nowrap; gap: 8px; padding: 10px 12px; }
+  .publier-vide input { display: none; }
+  .publier-vide .avatar { order: 1; }
+  .publier-vide .btn {
+    order: 2; margin-left: 0; flex: 1 1 auto;
+    padding: 10px 14px; font-size: 13px; white-space: nowrap;
+  }
+  .txt-publier-desktop { display: none; }
+  .txt-publier-mobile { display: inline; }
+
+
+  /* Filtres : forcer une seule ligne scrollable */
+  .filtres { flex-direction: column; align-items: stretch; min-width: 0; }
+  .onglets, .filtres .onglets {
+    flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; min-width: 0; max-width: 100%;
+  }
+  .onglets::-webkit-scrollbar, .filtres .onglets::-webkit-scrollbar { display: none; }
+  .onglets .onglet, .filtres .onglets .onglet { flex-shrink: 0; white-space: nowrap; }
+
+  /* Colonne centrale du fil : empêcher le débordement horizontal de toute la page,
+     causé par la largeur "min-content" par défaut des colonnes de grille (.layout-3col),
+     qui bloquait le défilement interne des onglets ci-dessus. */
+  .layout-3col, .layout-2col { min-width: 0; }
+  .layout-3col > *, .layout-2col > * { min-width: 0; }
 }
